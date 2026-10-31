@@ -20,6 +20,7 @@ class DbEditorProvider {
         return { uri, dispose: () => { } };
     }
     async resolveCustomEditor(document, webviewPanel) {
+        webviewPanel.iconPath = vscode.Uri.file(path.join(this.context.extensionPath, 'media', 'logo.png'));
         webviewPanel.webview.options = {
             enableScripts: true,
             localResourceRoots: [vscode.Uri.file(path.join(this.context.extensionPath, 'media'))]
@@ -325,7 +326,9 @@ class DbEditorProvider {
     }
     getHtmlForWebview(webview) {
         const htmlPath = path.join(this.context.extensionPath, 'media', 'webview.html');
-        return fs.readFileSync(htmlPath, 'utf8');
+        const logoUri = webview.asWebviewUri(vscode.Uri.file(path.join(this.context.extensionPath, 'media', 'logo.png')));
+        let html = fs.readFileSync(htmlPath, 'utf8');
+        return html.replace(/{{LOGO_URI}}/g, logoUri.toString());
     }
 }
 exports.DbEditorProvider = DbEditorProvider;

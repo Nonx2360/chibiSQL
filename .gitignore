@@ -1,11 +1,8 @@
-.vscode/**
-.vscode-test/**
-src/**
-tsconfig.json
-PLAN.md
-**/*.map
+node_modules/
+.vscode/
+.vscode-test/
 *.vsix
 example.db
-/node_modules/**
 *.gif
-/.agent
+.agent/
+*.log

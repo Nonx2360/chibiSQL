@@ -9,4 +9,5 @@ example.db
 *.gif
 frames/**
 .agent/**
+/logo.png
 /node_modules/**

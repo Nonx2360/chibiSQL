@@ -4,6 +4,30 @@
   "description": "Anime-themed SQLite Database Reader & Editor for VS Code & Cursor",
   "version": "0.0.1",
   "publisher": "chibisql",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Nonx2360/chibiSQL.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Nonx2360/chibiSQL/issues"
+  },
+  "homepage": "https://github.com/Nonx2360/chibiSQL#readme",
+  "keywords": [
+    "sqlite",
+    "sqlite-viewer",
+    "sqlite-editor",
+    "sqlite3",
+    "database",
+    "db",
+    "sql",
+    "anime",
+    "tokyo-night",
+    "custom-editor",
+    "cursor",
+    "sql.js",
+    "wasm"
+  ],
+  "icon": "media/logo.png",
   "engines": {
     "vscode": "^1.80.0"
   },

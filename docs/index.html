@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChibiSQL — Anime SQLite Editor & Viewer for VS Code & Cursor</title>
+    <meta name="description" content="A lightweight, zero-dependency SQLite viewer and custom editor extension powered by WebAssembly (WASM). Inspect tables, run queries, and preview image BLOBs with Tokyo Night anime aesthetics.">
+    
+    <!-- Open Graph / SEO -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://nonx2360.github.io/chibiSQL/">
+    <meta property="og:title" content="ChibiSQL — Anime SQLite Editor & Viewer for VS Code & Cursor">
+    <meta property="og:description" content="A lightweight, zero-dependency SQLite viewer powered by WebAssembly. Inspect tables, run queries, and preview BLOB images in Tokyo Night style.">
+    <meta property="og:image" content="https://raw.githubusercontent.com/Nonx2360/chibiSQL/main/media/logo.png">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="ChibiSQL — Anime SQLite Editor & Viewer">
+    <meta property="twitter:description" content="Lightweight WebAssembly-powered SQLite viewer with Tokyo Night anime aesthetics for VS Code & Cursor.">
+    <meta property="twitter:image" content="https://raw.githubusercontent.com/Nonx2360/chibiSQL/main/media/logo.png">
+
+    <link rel="icon" type="image/png" href="logo.png">
+
+    <!-- Tailwind CDN & Google Fonts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-base: #16161e;
+            --bg-surface: #1a1b26;
+            --bg-card: #24283b;
+            --bg-header: #1f2335;
+            --border-subtle: #2f354d;
+            --pink-accent: #f7768e;
+            --cyan-accent: #7dcfff;
+            --purple-accent: #bb9af7;
+            --green-accent: #9ece6a;
+            --yellow-accent: #e0af68;
+            --text-primary: #c0caf5;
+            --text-secondary: #9aa5ce;
+            --text-muted: #565f89;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        .font-mono-code {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Ambient Glows */
+        .glow-pink {
+            box-shadow: 0 0 25px rgba(247, 118, 142, 0.25);
+        }
+        .glow-cyan {
+            box-shadow: 0 0 25px rgba(125, 207, 255, 0.25);
+        }
+        .glow-purple {
+            box-shadow: 0 0 35px rgba(187, 154, 247, 0.2);
+        }
+
+        /* Buttons */
+        .btn-neon-primary {
+            background: linear-gradient(135deg, #f7768e 0%, #bb9af7 100%);
+            color: #16161e;
+            font-weight: 700;
+            transition: all 0.2s ease;
+        }
+        .btn-neon-primary:hover {
+            box-shadow: 0 0 20px rgba(247, 118, 142, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .btn-glass {
+            background: rgba(36, 40, 59, 0.8);
+            border: 1px solid #2f354d;
+            color: #c0caf5;
+            backdrop-filter: blur(8px);
+            transition: all 0.2s ease;
+        }
+        .btn-glass:hover {
+            background: rgba(46, 52, 79, 0.9);
+            border-color: #7dcfff;
+            color: #7dcfff;
+            box-shadow: 0 0 14px rgba(125, 207, 255, 0.25);
+        }
+
+        /* Mascot Breathing Animation */
+        @keyframes pulseMascot {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(247, 118, 142, 0.4)); }
+            50% { transform: scale(1.04); filter: drop-shadow(0 0 20px rgba(187, 154, 247, 0.6)); }
+        }
+        .mascot-pulse {
+            animation: pulseMascot 4s infinite ease-in-out;
+        }
+
+        /* Grid Pattern Background */
+        .bg-grid-pattern {
+            background-image: radial-gradient(rgba(47, 53, 77, 0.5) 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #16161e;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2f354d;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #7aa2f7;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-grid-pattern antialiased selection:bg-[#f7768e] selection:text-[#16161e]">
+
+    <!-- Navbar -->
+    <header class="sticky top-0 z-50 bg-[#16161e]/90 backdrop-blur-md border-b border-[#2f354d]/80 px-4 sm:px-8 py-3.5">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <a href="#" class="flex items-center space-x-3 group">
+                <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#f7768e] via-[#bb9af7] to-[#7dcfff] p-[1.5px] mascot-pulse overflow-hidden">
+                    <img src="logo.png" alt="ChibiSQL Mascot" class="w-full h-full object-cover rounded-[10px]" />
+                </div>
+                <div class="flex flex-col">
+                    <div class="flex items-center space-x-1.5">
+                        <span class="text-base font-bold text-[#f7768e] tracking-tight">ChibiSQL</span>
+                        <span class="text-[10px] text-[#bb9af7] bg-[#bb9af7]/15 px-2 py-0.5 rounded-full border border-[#bb9af7]/30 font-semibold font-mono-code">v0.0.1</span>
+                    </div>
+                    <span class="text-[10px] text-[#565f89] font-mono-code leading-none">Anime SQLite Studio</span>
+                </div>
+            </a>
+
+            <!-- Nav Links -->
+            <nav class="hidden md:flex items-center space-x-6 text-xs font-semibold text-[#9aa5ce]">
+                <a href="#features" class="hover:text-[#7dcfff] transition">Features</a>
+                <a href="#interactive-preview" class="hover:text-[#7dcfff] transition">Live Demo</a>
+                <a href="#bento" class="hover:text-[#7dcfff] transition">Bento Grid</a>
+                <a href="#comparison" class="hover:text-[#7dcfff] transition">Why ChibiSQL?</a>
+                <a href="#installation" class="hover:text-[#7dcfff] transition">Quick Start</a>
+                <a href="#faq" class="hover:text-[#7dcfff] transition">FAQ</a>
+            </nav>
+
+            <!-- Actions -->
+            <div class="flex items-center space-x-3">
+                <a href="https://github.com/Nonx2360/chibiSQL" target="_blank" rel="noopener noreferrer" 
+                   class="btn-glass px-3.5 py-1.5 rounded-lg flex items-center space-x-2 text-xs font-semibold">
+                    <svg class="w-4 h-4 text-[#c0caf5]" viewBox="0 0 24 24" fill="currentColor">
+                        <path fill-rule="evenodd" clip-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"></path>
+                    </svg>
+                    <span>Star on GitHub</span>
+                </a>
+
+                <a href="#installation" class="btn-neon-primary px-4 py-1.5 rounded-lg text-xs flex items-center space-x-1.5 shadow-md">
+                    <span>Install VSIX</span>
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="relative pt-16 pb-20 px-4 sm:px-8 overflow-hidden">
+        <div class="max-w-5xl mx-auto text-center space-y-6">
+            <!-- Kaomoji Badge -->
+            <div class="inline-flex items-center space-x-2 bg-[#1f2335] border border-[#7dcfff]/30 px-3.5 py-1.5 rounded-full text-xs text-[#7dcfff] font-mono-code shadow-sm">
+                <span class="w-2 h-2 rounded-full bg-[#7dcfff] animate-ping"></span>
+                <span>(｡•̀ᴗ-)✧ Status: Ready to revolutionize your SQLite workflow!</span>
+            </div>
+
+            <!-- Main Heading -->
+            <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight text-white leading-tight">
+                The Anime <span class="bg-gradient-to-r from-[#f7768e] via-[#bb9af7] to-[#7dcfff] bg-clip-text text-transparent">SQLite Studio</span><br class="hidden sm:block"/>
+                for VS Code & Cursor.
+            </h1>
+
+            <!-- Subtitle -->
+            <p class="max-w-2xl mx-auto text-sm sm:text-base text-[#9aa5ce] leading-relaxed">
+                A lightweight, zero-dependency SQLite editor powered by <strong>WebAssembly</strong>. 
+                Inspect tables, execute queries, preview image BLOBs, and filter records effortlessly in a gorgeous Tokyo Night theme.
+            </p>
+
+            <!-- CTA Buttons -->
+            <div class="pt-4 flex flex-wrap items-center justify-center gap-3 font-semibold text-xs">
+                <a href="https://github.com/Nonx2360/chibiSQL/releases" target="_blank" rel="noopener noreferrer" class="btn-neon-primary px-6 py-3 rounded-xl flex items-center space-x-2 shadow-xl cursor-pointer">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    <span>Download VSIX (v0.0.1)</span>
+                </a>
+
+                <a href="https://github.com/Nonx2360/chibiSQL" target="_blank" rel="noopener noreferrer" class="btn-glass px-6 py-3 rounded-xl flex items-center space-x-2 cursor-pointer">
+                    <svg class="w-4 h-4 text-[#7dcfff]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                    <span>View Repository</span>
+                </a>
+            </div>
+
+            <!-- Quick Install Command Card -->
+            <div class="pt-2 max-w-md mx-auto">
+                <div class="bg-[#1f2335]/90 border border-[#2f354d] rounded-xl p-2.5 flex items-center justify-between font-mono-code text-[11px] text-[#c0caf5] shadow-inner">
+                    <span class="truncate pl-1">
+                        <span class="text-[#f7768e] font-bold">$</span> code --install-extension chibisql-0.0.1.vsix
+                    </span>
+                    <button onclick="copyCommand(this, 'code --install-extension chibisql-0.0.1.vsix')" class="btn-glass px-2.5 py-1 rounded text-[10px] text-[#7dcfff] flex items-center space-x-1 cursor-pointer">
+                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        <span>Copy</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Interactive Live Demo / App Mockup Section -->
+    <section id="interactive-preview" class="py-12 px-4 sm:px-8">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center space-y-2 mb-8">
+                <div class="inline-flex items-center space-x-1.5 text-xs font-bold uppercase tracking-wider text-[#bb9af7] font-mono-code">
+                    <span class="text-sm">⚡</span>
+                    <span>Interactive Workspace Showcase</span>
+                </div>
+                <h2 class="text-2xl sm:text-4xl font-extrabold text-white">Experience ChibiSQL Live in Your Browser</h2>
+                <p class="text-xs sm:text-sm text-[#9aa5ce]">Click around! Filter rows, switch tables, or click a row to inspect full records.</p>
+            </div>
+
+            <!-- Mockup Window -->
+            <div class="bg-[#1a1b26] border border-[#3b4261] rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[520px]">
+                <!-- Window Titlebar -->
+                <div class="bg-[#1f2335] border-b border-[#2f354d] px-4 py-2.5 flex items-center justify-between flex-shrink-0">
+                    <div class="flex items-center space-x-3">
+                        <div class="flex items-center space-x-1.5">
+                            <span class="w-3 h-3 rounded-full bg-[#f7768e]/80"></span>
+                            <span class="w-3 h-3 rounded-full bg-[#e0af68]/80"></span>
+                            <span class="w-3 h-3 rounded-full bg-[#9ece6a]/80"></span>
+                        </div>
+                        <span class="text-xs font-mono-code text-[#7dcfff] font-semibold flex items-center space-x-1.5">
+                            <span>northwind.sqlite</span>
+                            <span class="text-[10px] bg-[#7dcfff]/15 px-2 py-0.2 rounded-full border border-[#7dcfff]/30">ChibiSQL Editor</span>
+                        </span>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                        <div class="text-[11px] px-2.5 py-0.5 rounded-full bg-[#16161e] text-[#9ece6a] border border-[#9ece6a]/30 font-mono-code">
+                            (๑˃̵ᴗ˂̵) 77 Rows Loaded
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Window Content -->
+                <div class="flex-1 flex overflow-hidden">
+                    <!-- Left Sidebar -->
+                    <div class="w-48 bg-[#1a1b26] border-r border-[#2f354d] p-2 flex flex-col space-y-1 text-xs font-mono-code flex-shrink-0">
+                        <div class="text-[10px] text-[#565f89] uppercase tracking-wider px-2 py-1 font-bold">Tables</div>
+                        <button onclick="selectMockTable('Products')" id="mockTabProducts" class="w-full text-left px-2.5 py-1.5 rounded-lg bg-[#bb9af7]/15 border-l-4 border-l-[#f7768e] text-[#f7768e] font-bold flex justify-between items-center cursor-pointer">
+                            <span>Products</span>
+                            <span class="text-[10px] bg-[#16161e] text-[#9aa5ce] px-1.5 rounded">77</span>
+                        </button>
+                        <button onclick="selectMockTable('Categories')" id="mockTabCategories" class="w-full text-left px-2.5 py-1.5 rounded-lg text-[#9aa5ce] hover:bg-[#1f2335] hover:text-[#7dcfff] flex justify-between items-center cursor-pointer">
+                            <span>Categories</span>
+                            <span class="text-[10px] bg-[#16161e] text-[#9aa5ce] px-1.5 rounded">8</span>
+                        </button>
+                        <button onclick="selectMockTable('Customers')" id="mockTabCustomers" class="w-full text-left px-2.5 py-1.5 rounded-lg text-[#9aa5ce] hover:bg-[#1f2335] hover:text-[#7dcfff] flex justify-between items-center cursor-pointer">
+                            <span>Customers</span>
+                            <span class="text-[10px] bg-[#16161e] text-[#9aa5ce] px-1.5 rounded">91</span>
+                        </button>
+                    </div>
+
+                    <!-- Right Data Table View -->
+                    <div class="flex-1 flex flex-col overflow-hidden bg-[#16161e]/50">
+                        <!-- Toolbar -->
+                        <div class="p-2.5 bg-[#1f2335] border-b border-[#2f354d] flex items-center justify-between">
+                            <div class="flex items-center space-x-2 text-xs font-bold text-[#c0caf5]">
+                                <span>🌸</span>
+                                <span id="mockActiveTableName">Products</span>
+                                <span class="text-[10px] font-mono-code text-[#7dcfff] bg-[#16161e] px-2 py-0.5 rounded-full border border-[#7dcfff]/30">LIMIT 50</span>
+                            </div>
+
+                            <!-- Live Filter Input -->
+                            <div class="relative w-56">
+                                <input id="mockFilterInput" oninput="filterMockRows()" type="text" placeholder="Live filter rows..." 
+                                       class="w-full bg-[#16161e] border border-[#2f354d] rounded-lg px-2.5 py-1 text-xs text-[#c0caf5] placeholder-[#565f89] focus:outline-none focus:border-[#7dcfff] font-mono-code" />
+                            </div>
+                        </div>
+
+                        <!-- Grid -->
+                        <div class="flex-1 overflow-auto font-mono-code text-xs">
+                            <table class="min-w-full text-left border-collapse">
+                                <thead class="bg-[#1f2335] text-[#9aa5ce] sticky top-0 border-b border-[#2f354d]">
+                                    <tr>
+                                        <th class="p-2 border-r border-[#2f354d] w-10 text-center text-[#565f89]">#</th>
+                                        <th class="p-2 border-r border-[#2f354d] text-[#e0af68]">🔑 ProductID</th>
+                                        <th class="p-2 border-r border-[#2f354d] text-[#f7768e]">ProductName</th>
+                                        <th class="p-2 border-r border-[#2f354d] text-[#7dcfff]"># UnitPrice</th>
+                                        <th class="p-2 border-r border-[#2f354d] text-[#9ece6a]"># UnitsInStock</th>
+                                        <th class="p-2 text-[#bb9af7]">📦 Picture</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="mockTableBody" class="divide-y divide-[#24283b] text-[#c0caf5]">
+                                    <!-- Injected by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Footer Stepper -->
+                        <div class="p-2 bg-[#1f2335] border-t border-[#2f354d] flex items-center justify-between text-[11px] font-mono-code text-[#9aa5ce]">
+                            <div>Showing 1 - 5 of 77 rows (Click row to inspect)</div>
+                            <div class="flex items-center space-x-1">
+                                <span class="px-2 py-0.5 bg-[#16161e] border border-[#2f354d] rounded text-[#f7768e] font-bold">Page 1 / 2</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Bento Grid Features Section -->
+    <section id="bento" class="py-16 px-4 sm:px-8 border-t border-[#2f354d]/60 bg-[#1a1b26]/30">
+        <div class="max-w-6xl mx-auto space-y-12">
+            <div class="text-center space-y-3">
+                <span class="text-xs font-bold uppercase tracking-widest text-[#f7768e] font-mono-code">Modular & Powerful</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Engineered for SQLite Excellence</h2>
+                <p class="text-sm text-[#9aa5ce] max-w-xl mx-auto">Everything you need to view, navigate, and query databases right inside your editor workspace.</p>
+            </div>
+
+            <!-- Grid Items -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <!-- Bento 1: Large WASM -->
+                <div class="md:col-span-2 bg-[#1f2335]/70 border border-[#2f354d] rounded-2xl p-6 sm:p-8 space-y-4 shadow-xl hover:border-[#7dcfff]/60 transition">
+                    <div class="w-12 h-12 rounded-xl bg-[#7dcfff]/10 border border-[#7dcfff]/30 flex items-center justify-center text-[#7dcfff]">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        </svg>
+                    </div>
+                    <div class="space-y-1">
+                        <h3 class="text-xl font-bold text-white">100% In-Process WebAssembly Core</h3>
+                        <p class="text-xs sm:text-sm text-[#9aa5ce] leading-relaxed">
+                            Powered by <code>sql.js</code> running compiled SQLite in WASM. Never worry about broken native node-gyp builds, Python dependencies, or installing the SQLite CLI on your host machine.
+                        </p>
+                    </div>
+                    <div class="pt-2 flex flex-wrap gap-2 text-[11px] font-mono-code">
+                        <span class="bg-[#16161e] border border-[#2f354d] text-[#7dcfff] px-2.5 py-1 rounded-md">⚡ Zero Setup</span>
+                        <span class="bg-[#16161e] border border-[#2f354d] text-[#9ece6a] px-2.5 py-1 rounded-md">🔒 100% Local Sandbox</span>
+                        <span class="bg-[#16161e] border border-[#2f354d] text-[#bb9af7] px-2.5 py-1 rounded-md">💻 VS Code & Cursor Ready</span>
+                    </div>
+                </div>
+
+                <!-- Bento 2: Tokyo Night UI -->
+                <div class="bg-[#1f2335]/70 border border-[#2f354d] rounded-2xl p-6 sm:p-8 space-y-4 shadow-xl hover:border-[#f7768e]/60 transition">
+                    <div class="w-12 h-12 rounded-xl bg-[#f7768e]/10 border border-[#f7768e]/30 flex items-center justify-center text-[#f7768e]">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                            <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                            <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                        </svg>
+                    </div>
+                    <div class="space-y-1">
+                        <h3 class="text-xl font-bold text-white">Anime Tokyo Night Aesthetic</h3>
+                        <p class="text-xs sm:text-sm text-[#9aa5ce] leading-relaxed">
+                            Carefully crafted dark pastel palette with mascot speech bubble feedback and zero eye-strain during overnight development.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Bento 3: Image BLOB Preview -->
+                <div class="bg-[#1f2335]/70 border border-[#2f354d] rounded-2xl p-6 sm:p-8 space-y-4 shadow-xl hover:border-[#bb9af7]/60 transition">
+                    <div class="w-12 h-12 rounded-xl bg-[#bb9af7]/10 border border-[#bb9af7]/30 flex items-center justify-center text-[#bb9af7]">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                    </div>
+                    <div class="space-y-1">
+                        <h3 class="text-lg font-bold text-white">BLOB Image Previews</h3>
+                        <p class="text-xs sm:text-sm text-[#9aa5ce] leading-relaxed">
+                            Detects PNG, JPEG, GIF, BMP, and WebP binaries automatically. View thumbnails in the grid and download raw files in one click.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Bento 4: SQL Console -->
+                <div class="bg-[#1f2335]/70 border border-[#2f354d] rounded-2xl p-6 sm:p-8 space-y-4 shadow-xl hover:border-[#9ece6a]/60 transition">
+                    <div class="w-12 h-12 rounded-xl bg-[#9ece6a]/10 border border-[#9ece6a]/30 flex items-center justify-center text-[#9ece6a]">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="4 17 10 11 4 5"></polyline>
+                            <line x1="12" y1="19" x2="20" y2="19"></line>
+                        </svg>
+                    </div>
+                    <div class="space-y-1">
+                        <h3 class="text-lg font-bold text-white">Interactive Query Console</h3>
+                        <p class="text-xs sm:text-sm text-[#9aa5ce] leading-relaxed">
+                            Execute custom queries with <kbd class="px-1.5 py-0.5 bg-[#16161e] border border-[#2f354d] rounded font-mono-code text-[11px]">Ctrl+Enter</kbd>. Inspect response timing in milliseconds and affected counts.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Bento 5: Row Inspector Modal -->
+                <div class="bg-[#1f2335]/70 border border-[#2f354d] rounded-2xl p-6 sm:p-8 space-y-4 shadow-xl hover:border-[#e0af68]/60 transition">
+                    <div class="w-12 h-12 rounded-xl bg-[#e0af68]/10 border border-[#e0af68]/30 flex items-center justify-center text-[#e0af68]">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                    </div>
+                    <div class="space-y-1">
+                        <h3 class="text-lg font-bold text-white">Modal Record Inspector</h3>
+                        <p class="text-xs sm:text-sm text-[#9aa5ce] leading-relaxed">
+                            Click any record to inspect formatted columns. Step sequentially with arrow keys (<kbd class="px-1.5 py-0.5 bg-[#16161e] border border-[#2f354d] rounded font-mono-code text-[11px]">↑</kbd> and <kbd class="px-1.5 py-0.5 bg-[#16161e] border border-[#2f354d] rounded font-mono-code text-[11px]">↓</kbd>).
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparison Table -->
+    <section id="comparison" class="py-16 px-4 sm:px-8 border-t border-[#2f354d]/60">
+        <div class="max-w-4xl mx-auto space-y-8">
+            <div class="text-center space-y-2">
+                <span class="text-xs font-bold uppercase tracking-widest text-[#7dcfff] font-mono-code">Why ChibiSQL?</span>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-white">Built for the Modern Developer</h2>
+            </div>
+
+            <div class="overflow-x-auto rounded-2xl border border-[#2f354d] bg-[#1f2335]/60 shadow-xl">
+                <table class="w-full text-left text-xs font-mono-code">
+                    <thead class="bg-[#16161e] text-[#9aa5ce] border-b border-[#2f354d]">
+                        <tr>
+                            <th class="p-3.5">Feature</th>
+                            <th class="p-3.5 text-[#f7768e] font-bold">ChibiSQL 🌸</th>
+                            <th class="p-3.5">Standard SQLite Tools</th>
+                            <th class="p-3.5">DB Browser for SQLite</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#2f354d]/70 text-[#c0caf5]">
+                        <tr class="hover:bg-[#24283b]/40">
+                            <td class="p-3.5 font-bold">Native C++ Build Required</td>
+                            <td class="p-3.5 text-[#9ece6a] font-bold">❌ No (Pure WASM)</td>
+                            <td class="p-3.5 text-[#e0af68]">⚠️ Often requires python/gyp</td>
+                            <td class="p-3.5 text-[#565f89]">❌ Standalone desktop app</td>
+                        </tr>
+                        <tr class="hover:bg-[#24283b]/40">
+                            <td class="p-3.5 font-bold">In-Editor Integration</td>
+                            <td class="p-3.5 text-[#9ece6a] font-bold">✅ 1-Click in VS Code/Cursor</td>
+                            <td class="p-3.5 text-[#9ece6a]">✅ Yes</td>
+                            <td class="p-3.5 text-[#f7768e]">❌ Separate window app</td>
+                        </tr>
+                        <tr class="hover:bg-[#24283b]/40">
+                            <td class="p-3.5 font-bold">Inline Image BLOB Thumbnails</td>
+                            <td class="p-3.5 text-[#9ece6a] font-bold">✅ Yes, instant preview</td>
+                            <td class="p-3.5 text-[#f7768e]">❌ Rare / Hex only</td>
+                            <td class="p-3.5 text-[#e0af68]">⚠️ In side panel</td>
+                        </tr>
+                        <tr class="hover:bg-[#24283b]/40">
+                            <td class="p-3.5 font-bold">Tokyo Night Anime Styling</td>
+                            <td class="p-3.5 text-[#f7768e] font-bold">🌸 Iconic & Eye-friendly</td>
+                            <td class="p-3.5 text-[#565f89]">❌ Default UI</td>
+                            <td class="p-3.5 text-[#565f89]">❌ OS Native</td>
+                        </tr>
+                        <tr class="hover:bg-[#24283b]/40">
+                            <td class="p-3.5 font-bold">Per-Column Debounced Filtering</td>
+                            <td class="p-3.5 text-[#9ece6a] font-bold">✅ Built-in sticky header</td>
+                            <td class="p-3.5 text-[#f7768e]">❌ No</td>
+                            <td class="p-3.5 text-[#9ece6a]">✅ Yes</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Start Installation Section -->
+    <section id="installation" class="py-16 px-4 sm:px-8 border-t border-[#2f354d]/60 bg-[#1a1b26]/40">
+        <div class="max-w-4xl mx-auto space-y-8">
+            <div class="text-center space-y-2">
+                <span class="text-xs font-bold uppercase tracking-widest text-[#9ece6a] font-mono-code">Getting Started</span>
+                <h2 class="text-2xl sm:text-4xl font-extrabold text-white">Install in Under 60 Seconds</h2>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono-code">
+                <!-- Step 1 -->
+                <div class="bg-[#1f2335] border border-[#2f354d] rounded-xl p-5 space-y-2.5">
+                    <div class="text-[#f7768e] font-bold text-sm">Step 1</div>
+                    <div class="font-bold text-white text-sm">Download VSIX</div>
+                    <p class="text-[#9aa5ce]">Download the prebuilt extension package directly from our GitHub release or webpage.</p>
+                    <a href="https://github.com/Nonx2360/chibiSQL/releases" target="_blank" rel="noopener noreferrer" class="inline-block mt-2 text-[#7dcfff] hover:underline font-bold">⬇ Download Latest VSIX</a>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="bg-[#1f2335] border border-[#2f354d] rounded-xl p-5 space-y-2.5">
+                    <div class="text-[#bb9af7] font-bold text-sm">Step 2</div>
+                    <div class="font-bold text-white text-sm">Install into Editor</div>
+                    <p class="text-[#9aa5ce]">Open Extensions (<kbd class="px-1 py-0.5 bg-[#16161e] border border-[#2f354d] rounded">Ctrl+Shift+X</kbd>), click <strong>...</strong>, and choose <strong>Install from VSIX...</strong></p>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="bg-[#1f2335] border border-[#2f354d] rounded-xl p-5 space-y-2.5">
+                    <div class="text-[#9ece6a] font-bold text-sm">Step 3</div>
+                    <div class="font-bold text-white text-sm">Click any .db File</div>
+                    <p class="text-[#9aa5ce]">Click any <code>.db</code>, <code>.sqlite</code>, or <code>.sqlite3</code> file to automatically launch ChibiSQL!</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq" class="py-16 px-4 sm:px-8 border-t border-[#2f354d]/60">
+        <div class="max-w-3xl mx-auto space-y-8">
+            <div class="text-center space-y-2">
+                <span class="text-xs font-bold uppercase tracking-widest text-[#bb9af7] font-mono-code">Got Questions?</span>
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-white">Frequently Asked Questions</h2>
+            </div>
+
+            <div class="space-y-3 text-xs sm:text-sm">
+                <details class="group bg-[#1f2335] border border-[#2f354d] rounded-xl p-4 cursor-pointer">
+                    <summary class="font-bold text-white flex justify-between items-center list-none">
+                        <span>Does ChibiSQL work in Cursor and Antigravity IDE?</span>
+                        <span class="text-[#7dcfff] group-open:rotate-180 transition-transform">▼</span>
+                    </summary>
+                    <p class="pt-3 text-[#9aa5ce] leading-relaxed">
+                        Yes! Because Cursor and Antigravity IDE share the VS Code extension runtime architecture, ChibiSQL installs and functions smoothly across all VS Code compatible editors.
+                    </p>
+                </details>
+
+                <details class="group bg-[#1f2335] border border-[#2f354d] rounded-xl p-4 cursor-pointer">
+                    <summary class="font-bold text-white flex justify-between items-center list-none">
+                        <span>How does ChibiSQL handle large SQLite databases?</span>
+                        <summary class="hidden"></summary>
+                        <span class="text-[#7dcfff] group-open:rotate-180 transition-transform">▼</span>
+                    </summary>
+                    <p class="pt-3 text-[#9aa5ce] leading-relaxed">
+                        ChibiSQL performs server-side (in-process WASM) SQL pagination using <code>LIMIT</code> and <code>OFFSET</code>. Only the 50 rows currently on screen are rendered into the DOM, making navigation snappy even with tables containing over 100,000 rows.
+                    </p>
+                </details>
+
+                <details class="group bg-[#1f2335] border border-[#2f354d] rounded-xl p-4 cursor-pointer">
+                    <summary class="font-bold text-white flex justify-between items-center list-none">
+                        <span>Are image BLOBs supported?</span>
+                        <span class="text-[#7dcfff] group-open:rotate-180 transition-transform">▼</span>
+                    </summary>
+                    <p class="pt-3 text-[#9aa5ce] leading-relaxed">
+                        Yes! ChibiSQL automatically recognizes PNG, JPEG, GIF, WebP, and BMP binary headers (including the Northwind 78-byte OLE offset). It displays thumbnails right in the table cell with a full preview in the record inspector.
+                    </p>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="mt-auto border-t border-[#2f354d] bg-[#16161e] py-8 px-4 sm:px-8 text-xs font-mono-code text-[#565f89]">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-2.5">
+                <img src="logo.png" alt="Logo" class="w-6 h-6 rounded-md object-cover" />
+                <span class="font-bold text-[#f7768e]">ChibiSQL</span>
+                <span>© 2026 Nonx2360. MIT License.</span>
+            </div>
+
+            <div class="flex items-center space-x-6 text-[#9aa5ce]">
+                <a href="https://github.com/Nonx2360/chibiSQL" target="_blank" rel="noopener noreferrer" class="hover:text-[#7dcfff] transition">GitHub Repo</a>
+                <a href="https://github.com/Nonx2360/chibiSQL/releases" target="_blank" rel="noopener noreferrer" class="hover:text-[#7dcfff] transition">Releases</a>
+                <a href="https://github.com/Nonx2360/chibiSQL/releases" target="_blank" rel="noopener noreferrer" class="hover:text-[#f7768e] transition">Download VSIX</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Interactive Mockup Script -->
+    <script>
+        const mockData = {
+            Products: [
+                { id: 1, name: 'Chai', price: '$18.00', stock: 39, img: '🍵' },
+                { id: 2, name: 'Chang', price: '$19.00', stock: 17, img: '🍺' },
+                { id: 3, name: 'Aniseed Syrup', price: '$10.00', stock: 13, img: '🍯' },
+                { id: 4, name: "Chef Anton's Seasoning", price: '$22.00', stock: 53, img: '🧂' },
+                { id: 5, name: "Chef Anton's Gumbo Mix", price: '$21.35', stock: 0, img: '🍲' }
+            ],
+            Categories: [
+                { id: 1, name: 'Beverages', price: 'Soft drinks, coffees, teas', stock: '12 items', img: '🥤' },
+                { id: 2, name: 'Condiments', price: 'Sweet and savory sauces', stock: '12 items', img: '🥫' },
+                { id: 3, name: 'Confections', price: 'Desserts, candies, breads', stock: '13 items', img: '🍰' }
+            ],
+            Customers: [
+                { id: 'ALFKI', name: 'Alfreds Futterkiste', price: 'Maria Anders', stock: 'Germany', img: '🏢' },
+                { id: 'ANATR', name: 'Ana Trujillo Emparedados', price: 'Ana Trujillo', stock: 'Mexico', img: '🌮' },
+                { id: 'ANTON', name: 'Antonio Moreno Taquería', price: 'Antonio Moreno', stock: 'Mexico', img: '🌯' }
+            ]
+        };
+
+        let currentMockTable = 'Products';
+
+        function renderMockTable() {
+            const tbody = document.getElementById('mockTableBody');
+            const filter = (document.getElementById('mockFilterInput').value || '').toLowerCase();
+            tbody.innerHTML = '';
+
+            const rows = mockData[currentMockTable].filter(r => 
+                r.name.toLowerCase().includes(filter) || String(r.id).toLowerCase().includes(filter)
+            );
+
+            if (rows.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="p-6 text-center text-[#565f89] italic">No records match filter</td></tr>';
+                return;
+            }
+
+            rows.forEach((r, idx) => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-[#24283b] hover:bg-[#bb9af7]/10 cursor-pointer transition';
+                tr.onclick = () => alert(`🌸 Record Inspector\n\nTable: ${currentMockTable}\nID: ${r.id}\nName: ${r.name}\nValue: ${r.price}\nUnits: ${r.stock}`);
+                tr.innerHTML = `
+                    <td class="p-2 border-r border-[#24283b] text-center text-[#565f89]">${idx + 1}</td>
+                    <td class="p-2 border-r border-[#24283b] text-[#e0af68] font-bold">${r.id}</td>
+                    <td class="p-2 border-r border-[#24283b] text-[#f7768e] font-semibold">${r.name}</td>
+                    <td class="p-2 border-r border-[#24283b] text-[#7dcfff]">${r.price}</td>
+                    <td class="p-2 border-r border-[#24283b] text-[#9ece6a]">${r.stock}</td>
+                    <td class="p-2 text-base">${r.img}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function selectMockTable(table) {
+            currentMockTable = table;
+            document.getElementById('mockActiveTableName').innerText = table;
+
+            ['Products', 'Categories', 'Customers'].forEach(t => {
+                const tab = document.getElementById('mockTab' + t);
+                if (t === table) {
+                    tab.className = 'w-full text-left px-2.5 py-1.5 rounded-lg bg-[#bb9af7]/15 border-l-4 border-l-[#f7768e] text-[#f7768e] font-bold flex justify-between items-center cursor-pointer';
+                } else {
+                    tab.className = 'w-full text-left px-2.5 py-1.5 rounded-lg text-[#9aa5ce] hover:bg-[#1f2335] hover:text-[#7dcfff] flex justify-between items-center cursor-pointer';
+                }
+            });
+
+            renderMockTable();
+        }
+
+        function filterMockRows() {
+            renderMockTable();
+        }
+
+        function copyCommand(btn, text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const original = btn.innerHTML;
+                btn.innerHTML = '<span>✓ Copied!</span>';
+                setTimeout(() => { btn.innerHTML = original; }, 2000);
+            });
+        }
+
+        // Initialize demo on load
+        renderMockTable();
+    </script>
+</body>
+</html>

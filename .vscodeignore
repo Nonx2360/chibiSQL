@@ -8,4 +8,5 @@ PLAN.md
 example.db
 *.gif
 frames/**
+.agent/**
 /node_modules/**

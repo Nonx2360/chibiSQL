@@ -3,48 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChibiSQL</title>
+    <title>ChibiSQL - Anime SQLite Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --bg-base: #16161e;
+            --bg-surface: #1a1b26;
+            --bg-card: #24283b;
+            --bg-header: #1f2335;
+            --border-subtle: #2f354d;
+            --border-hover: #414868;
+            --pink-accent: #f7768e;
+            --cyan-accent: #7dcfff;
+            --purple-accent: #bb9af7;
+            --green-accent: #9ece6a;
+            --yellow-accent: #e0af68;
+            --text-primary: #c0caf5;
+            --text-secondary: #9aa5ce;
+            --text-muted: #565f89;
+        }
+
         body {
-            background-color: #1a1b26;
-            color: #a9b1d6;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             overflow: hidden;
         }
-        .pink-accent { color: #f7768e; }
-        .cyan-accent { color: #7dcfff; }
-        .purple-accent { color: #bb9af7; }
-        .yellow-accent { color: #e0af68; }
-        .green-accent { color: #9ece6a; }
-        .dark-card { background-color: #24283b; border-color: #3b4261; }
-        .dark-header { background-color: #1f2335; border-color: #3b4261; }
-        .table-cell { border-color: #2f354d; }
-        .glow-button {
+
+        .font-mono-code {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Anime glow & neon utilities */
+        .neon-glow-pink {
+            box-shadow: 0 0 15px rgba(247, 118, 142, 0.35);
+        }
+        .neon-glow-cyan {
+            box-shadow: 0 0 15px rgba(125, 207, 255, 0.35);
+        }
+        .neon-border-pink {
+            border-color: #f7768e;
+            box-shadow: 0 0 8px rgba(247, 118, 142, 0.3);
+        }
+        .btn-neon-cta {
             background: linear-gradient(135deg, #f7768e 0%, #bb9af7 100%);
-            transition: all 0.2s ease;
+            color: #16161e;
+            font-weight: 700;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .glow-button:hover {
-            opacity: 0.95;
-            box-shadow: 0 0 14px rgba(247, 118, 142, 0.45);
+        .btn-neon-cta:hover {
+            box-shadow: 0 0 16px rgba(247, 118, 142, 0.55);
+            transform: translateY(-1px);
         }
-        .btn-ghost {
+        .btn-neon-cta:active {
+            transform: translateY(0);
+        }
+
+        .btn-toolbar {
             background-color: #1f2335;
-            border: 1px solid #3b4261;
+            border: 1px solid #2f354d;
+            color: #c0caf5;
             transition: all 0.15s ease;
         }
-        .btn-ghost:hover {
-            background-color: #2e344f;
+        .btn-toolbar:hover:not(:disabled) {
+            background-color: #292e42;
             border-color: #7dcfff;
             color: #7dcfff;
+            box-shadow: 0 0 10px rgba(125, 207, 255, 0.2);
         }
-        /* Custom scrollbars */
+        .btn-toolbar:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* Custom Scrollbars */
         ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+            width: 7px;
+            height: 7px;
         }
         ::-webkit-scrollbar-track {
-            background: #1a1b26;
+            background: #16161e;
         }
         ::-webkit-scrollbar-thumb {
             background: #3b4261;
@@ -53,180 +94,301 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #7aa2f7;
         }
+
+        /* Table Grid Layout & Sticky Positions */
         .grid-header-sticky {
             position: sticky;
             top: 0;
-            z-index: 20;
+            z-index: 25;
+            background: #1f2335;
         }
         .grid-filter-sticky {
             position: sticky;
             top: 36px;
-            z-index: 19;
+            z-index: 24;
+            background: #1a1b26;
         }
         .col-index-sticky {
             position: sticky;
             left: 0;
-            z-index: 10;
+            z-index: 20;
+            background: #1a1b26;
         }
-        .modal-backdrop {
-            background-color: rgba(15, 17, 26, 0.75);
-            backdrop-filter: blur(4px);
+        thead .col-index-sticky {
+            z-index: 30;
+            background: #1f2335;
+        }
+
+        /* Cell Hover Quick Copy Button */
+        .cell-hover-btn {
+            display: none;
+        }
+        td:hover .cell-hover-btn {
+            display: inline-flex;
+        }
+
+        /* Mascot Breathing Pulse */
+        @keyframes mascotPulse {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 6px rgba(247, 118, 142, 0.4)); }
+            50% { transform: scale(1.05); filter: drop-shadow(0 0 12px rgba(187, 154, 247, 0.6)); }
+        }
+        .mascot-pulse {
+            animation: mascotPulse 4s infinite ease-in-out;
+        }
+
+        @keyframes toastFadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .toast-animate {
+            animation: toastFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .mascot-pulse, .toast-animate, .btn-neon-cta {
+                animation: none !important;
+                transition: none !important;
+            }
         }
     </style>
 </head>
 <body class="h-screen flex flex-col p-3 select-none text-xs">
 
-    <!-- Top Navigation / Header -->
-    <header class="flex items-center justify-between pb-2.5 border-b border-slate-700/80 mb-3 flex-shrink-0">
+    <!-- Top Navigation Bar -->
+    <header class="flex items-center justify-between pb-2.5 border-b border-[#2f354d] mb-3 flex-shrink-0">
+        <!-- Logo, Mascot & Reactive Speech Bubble -->
         <div class="flex items-center space-x-3">
-            <div class="flex items-center space-x-1.5 cursor-pointer" onclick="reloadDatabase()">
-                <span class="text-xl">⚡</span>
-                <h1 class="text-base font-bold pink-accent tracking-wide flex items-center gap-1.5">
-                    ChibiSQL <span class="text-[10px] text-purple-300 bg-purple-900/60 px-2 py-0.5 rounded-full border border-purple-500/30">v0.2 Desu~</span>
-                </h1>
+            <div class="flex items-center space-x-2 cursor-pointer group" onclick="reloadDatabase()" title="ChibiSQL - Click to reload">
+                <!-- SVG Anime Mascot Icon -->
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#f7768e] to-[#bb9af7] p-[1.5px] mascot-pulse">
+                    <div class="w-full h-full bg-[#16161e] rounded-[7px] flex items-center justify-center">
+                        <svg class="w-4 h-4 text-[#f7768e]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="flex flex-col">
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm font-bold tracking-wide text-[#f7768e]">ChibiSQL</span>
+                        <span class="text-[10px] font-semibold text-[#bb9af7] bg-[#bb9af7]/10 px-2 py-0.5 rounded-full border border-[#bb9af7]/30">v0.2 Desu~</span>
+                    </div>
+                    <span class="text-[10px] text-[#565f89] font-mono-code leading-none">Anime SQLite Studio</span>
+                </div>
             </div>
-            <div id="statusBadge" class="text-[11px] px-3 py-1 rounded-full bg-slate-800/90 text-cyan-300 border border-cyan-500/30 font-medium">
-                (｡•̀ᴗ-)✧ Status: Ready
+
+            <!-- Anime Reactive Speech Toast -->
+            <div id="statusBadge" class="hidden sm:flex items-center space-x-2 text-[11px] px-3 py-1 rounded-full bg-[#1f2335] text-[#7dcfff] border border-[#7dcfff]/30 font-medium">
+                <span class="w-2 h-2 rounded-full bg-[#7dcfff] animate-ping"></span>
+                <span id="statusText">(｡•̀ᴗ-)✧ Status: Ready</span>
             </div>
         </div>
 
+        <!-- Top Right Action Controls -->
         <div class="flex items-center space-x-2">
-            <button onclick="toggleConsole()" id="btnToggleConsole" class="btn-ghost text-slate-300 px-3 py-1 rounded flex items-center space-x-1.5">
-                <span>⚡</span>
-                <span>SQL Console</span>
+            <button onclick="toggleConsole()" id="btnToggleConsole" class="btn-toolbar px-3 py-1.5 rounded-md flex items-center space-x-1.5 font-medium cursor-pointer" title="Open SQL Console (Ctrl+Enter)">
+                <svg class="w-3.5 h-3.5 text-[#f7768e]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="4 17 10 11 4 5"></polyline>
+                    <line x1="12" y1="19" x2="20" y2="19"></line>
+                </svg>
+                <span>Console</span>
             </button>
-            <button onclick="reloadDatabase()" title="Reload entire database" class="btn-ghost text-slate-300 px-2.5 py-1 rounded">
-                ⟳ Refresh DB
+
+            <button onclick="reloadDatabase()" title="Reload Database from disk" class="btn-toolbar px-3 py-1.5 rounded-md flex items-center space-x-1.5 font-medium cursor-pointer">
+                <svg class="w-3.5 h-3.5 text-[#7dcfff]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                </svg>
+                <span>Reload</span>
             </button>
         </div>
     </header>
 
-    <!-- Main Workspace Container -->
+    <!-- Main Workspace Layout -->
     <div class="flex-1 flex space-x-3 overflow-hidden">
 
-        <!-- Left Sidebar: Tables List -->
-        <aside class="w-64 dark-card border rounded-lg flex flex-col overflow-hidden flex-shrink-0 shadow-lg">
-            <div class="p-2.5 dark-header border-b flex items-center justify-between">
-                <div class="flex items-center space-x-1.5">
-                    <span class="text-sm">📁</span>
-                    <span class="font-bold cyan-accent tracking-wider uppercase text-[11px]">Tables</span>
-                    <span id="tablesCountBadge" class="text-[10px] bg-cyan-900/40 text-cyan-300 px-1.5 py-0.2 rounded-full border border-cyan-700/40">0</span>
+        <!-- Left Sidebar: Tables Explorer -->
+        <aside class="w-64 bg-[#1a1b26] border border-[#2f354d] rounded-xl flex flex-col overflow-hidden flex-shrink-0 shadow-xl">
+            <!-- Sidebar Header -->
+            <div class="p-2.5 bg-[#1f2335] border-b border-[#2f354d] flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <svg class="w-3.5 h-3.5 text-[#7dcfff]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                    </svg>
+                    <span class="font-bold text-[#7dcfff] uppercase tracking-wider text-[11px]">Tables</span>
+                    <span id="tablesCountBadge" class="text-[10px] bg-[#7dcfff]/10 text-[#7dcfff] px-1.5 py-0.5 rounded-full border border-[#7dcfff]/20 font-mono-code">0</span>
                 </div>
-                <button onclick="reloadDatabase()" title="Refresh tables" class="text-slate-400 hover:text-cyan-300 transition">⟳</button>
+                <button onclick="reloadDatabase()" title="Refresh tables" class="text-[#565f89] hover:text-[#7dcfff] transition cursor-pointer p-1 rounded">
+                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="23 4 23 10 17 10"></polyline>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                    </svg>
+                </button>
             </div>
 
-            <!-- Table Search Input -->
-            <div class="p-2 border-b border-slate-700/50">
-                <div class="relative">
+            <!-- Table Search Input with Clean SVG Icon -->
+            <div class="p-2 border-b border-[#2f354d]/80 bg-[#16161e]/40">
+                <div class="relative flex items-center">
+                    <svg class="w-3.5 h-3.5 text-[#565f89] absolute left-2 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
                     <input id="tableSearchInput" oninput="filterTableList()" type="text" placeholder="Filter tables..." 
-                           class="w-full bg-slate-900/90 border border-slate-700 rounded px-2 py-1 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-400 text-[11px]" />
+                           class="w-full bg-[#16161e] border border-[#2f354d] rounded-lg pl-7 pr-7 py-1 text-[#c0caf5] placeholder-[#565f89] focus:outline-none focus:border-[#7dcfff] focus:ring-1 focus:ring-[#7dcfff]/40 font-mono-code text-[11px] transition" />
+                    <button id="clearTableSearchBtn" onclick="clearTableSearch()" class="hidden absolute right-2 text-[#565f89] hover:text-[#f7768e] cursor-pointer">✕</button>
                 </div>
             </div>
 
             <!-- Scrollable Tables List -->
             <div id="tableList" class="flex-1 overflow-y-auto p-1.5 space-y-1">
-                <div class="text-slate-500 italic p-2 text-center">Loading tables...</div>
+                <div class="text-[#565f89] italic p-4 text-center">Loading tables...</div>
             </div>
         </aside>
 
-        <!-- Right Side: Data Viewport & Optional Console -->
+        <!-- Right Main Content: Viewport & Optional Console -->
         <main class="flex-1 flex flex-col space-y-2 overflow-hidden">
 
             <!-- Collapsible SQL Console Drawer -->
-            <div id="queryConsolePanel" class="hidden dark-card border rounded-lg p-2.5 flex flex-col space-y-2 shadow-lg flex-shrink-0">
+            <div id="queryConsolePanel" class="hidden bg-[#1a1b26] border border-[#2f354d] rounded-xl p-3 flex flex-col space-y-2.5 shadow-2xl flex-shrink-0">
                 <div class="flex justify-between items-center">
-                    <div class="flex items-center space-x-2">
-                        <span class="font-bold pink-accent uppercase tracking-wider text-[11px]">Console Query</span>
-                        <span id="queryStats" class="text-[10px] text-slate-400"></span>
+                    <div class="flex items-center space-x-2.5">
+                        <div class="flex items-center space-x-1.5 text-[#f7768e] font-bold uppercase tracking-wider text-[11px]">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="4 17 10 11 4 5"></polyline>
+                                <line x1="12" y1="19" x2="20" y2="19"></line>
+                            </svg>
+                            <span>SQL Console</span>
+                        </div>
+                        <span id="queryStats" class="text-[10px] text-[#9aa5ce] font-mono-code"></span>
                     </div>
+
                     <div class="flex items-center space-x-2">
-                        <button onclick="runQuery()" class="glow-button text-slate-950 font-bold px-3 py-1 rounded shadow text-[11px]">
-                            Run Query (Ctrl+Enter)
+                        <button onclick="runQuery()" class="btn-neon-cta px-3 py-1 rounded-md text-[11px] flex items-center space-x-1.5 cursor-pointer">
+                            <svg class="w-3 h-3 text-[#16161e]" viewBox="0 0 24 24" fill="currentColor">
+                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                            </svg>
+                            <span>Execute (Ctrl+Enter)</span>
                         </button>
-                        <button onclick="toggleConsole()" class="text-slate-400 hover:text-pink-400 text-xs px-1.5 py-0.5">✕</button>
+                        <button onclick="toggleConsole()" class="text-[#565f89] hover:text-[#f7768e] p-1 rounded cursor-pointer transition">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="18" y1="6" x2="6" y2="18"></line>
+                                <line x1="6" y1="6" x2="18" y2="18"></line>
+                            </svg>
+                        </button>
                     </div>
                 </div>
+
                 <textarea id="queryInput" rows="3" 
-                          class="w-full bg-slate-950/80 border border-slate-700 rounded p-2 font-mono text-cyan-200 focus:outline-none focus:border-pink-400 text-[11px]" 
-                          placeholder="SELECT * FROM table WHERE ..."></textarea>
+                          class="w-full bg-[#16161e] border border-[#2f354d] rounded-lg p-2.5 font-mono-code text-[#7dcfff] placeholder-[#565f89] focus:outline-none focus:border-[#f7768e] focus:ring-1 focus:ring-[#f7768e]/40 text-xs transition" 
+                          placeholder="SELECT * FROM table WHERE condition..."></textarea>
             </div>
 
-            <!-- Table Explorer Container -->
-            <div class="flex-1 dark-card border rounded-lg flex flex-col overflow-hidden shadow-lg">
+            <!-- Table Data Viewport Container -->
+            <div class="flex-1 bg-[#1a1b26] border border-[#2f354d] rounded-xl flex flex-col overflow-hidden shadow-xl">
 
-                <!-- Table Explorer Header Bar -->
-                <div class="dark-header border-b px-3 py-2 flex items-center justify-between flex-shrink-0">
+                <!-- Table View Toolbar Header -->
+                <div class="bg-[#1f2335] border-b border-[#2f354d] px-3.5 py-2 flex items-center justify-between flex-shrink-0">
                     <div class="flex items-center space-x-2.5">
-                        <button onclick="refreshActiveTable()" title="Refresh table data" class="btn-ghost text-slate-300 px-2 py-0.5 rounded text-[11px]">
-                            ⟳
+                        <button onclick="refreshActiveTable()" title="Refresh current table data" class="btn-toolbar px-2.5 py-1 rounded-md text-xs cursor-pointer">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                            </svg>
                         </button>
-                        <span class="text-base">🌸</span>
-                        <span id="activeTableName" class="font-bold text-slate-200 text-[13px]">Select a table</span>
-                        <span id="activeTableRowCountBadge" class="hidden bg-slate-800 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-full font-mono text-[10px]">
+                        
+                        <div class="flex items-center space-x-2">
+                            <svg class="w-4 h-4 text-[#f7768e]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="3" y1="9" x2="21" y2="9"></line>
+                                <line x1="9" y1="21" x2="9" y2="9"></line>
+                            </svg>
+                            <span id="activeTableName" class="font-bold text-[#c0caf5] text-sm">Select a table</span>
+                        </div>
+
+                        <span id="activeTableRowCountBadge" class="hidden bg-[#16161e] text-[#7dcfff] border border-[#7dcfff]/30 px-2 py-0.5 rounded-full font-mono-code text-[10px]">
                             Rows: 0
                         </span>
                     </div>
 
                     <!-- Global Row Filter Input -->
                     <div class="flex items-center space-x-2">
-                        <div class="relative w-64">
+                        <div class="relative w-64 flex items-center">
+                            <svg class="w-3.5 h-3.5 text-[#565f89] absolute left-2.5 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
                             <input id="globalFilterInput" oninput="onGlobalFilterChange()" type="text" 
-                                   placeholder="Filter rows..." 
-                                   class="w-full bg-slate-900/90 border border-slate-700 rounded px-2.5 py-1 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-pink-400 text-[11px]" />
-                            <span id="globalFilterClear" onclick="clearGlobalFilter()" class="hidden absolute right-2 top-1 text-slate-500 hover:text-pink-400 cursor-pointer font-bold">✕</span>
+                                   placeholder="Filter all rows..." 
+                                   class="w-full bg-[#16161e] border border-[#2f354d] rounded-lg pl-8 pr-7 py-1 text-[#c0caf5] placeholder-[#565f89] focus:outline-none focus:border-[#f7768e] focus:ring-1 focus:ring-[#f7768e]/40 font-mono-code text-[11px] transition" />
+                            <span id="globalFilterClear" onclick="clearGlobalFilter()" class="hidden absolute right-2 text-[#565f89] hover:text-[#f7768e] cursor-pointer text-xs font-bold">✕</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Grid Scrollable Viewport -->
-                <div id="gridScrollArea" class="flex-1 overflow-auto bg-[#1a1b26]/50">
-                    <div id="emptyPlaceholder" class="h-full flex flex-col items-center justify-center text-slate-500 space-y-2 p-8">
-                        <span class="text-4xl">🌸</span>
-                        <p class="text-sm font-medium">Select a table from the sidebar to inspect records</p>
-                        <p class="text-[11px] text-slate-600">Supports column filtering, sorting, pagination, and BLOB inspector</p>
+                <!-- Scrollable Grid Viewport -->
+                <div id="gridScrollArea" class="flex-1 overflow-auto bg-[#16161e]/40">
+                    <div id="emptyPlaceholder" class="h-full flex flex-col items-center justify-center text-[#565f89] space-y-3 p-8">
+                        <div class="w-14 h-14 rounded-2xl bg-[#1f2335] border border-[#2f354d] flex items-center justify-center text-[#f7768e] shadow-lg">
+                            <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                            </svg>
+                        </div>
+                        <div class="text-center space-y-1">
+                            <p class="text-sm font-semibold text-[#c0caf5]">Select a table from the sidebar</p>
+                            <p class="text-[11px] text-[#565f89]">Explore rows with pagination, sorting, per-column filters, and BLOB inspector</p>
+                        </div>
                     </div>
 
                     <table id="dataTable" class="min-w-full text-left border-collapse hidden">
                         <!-- Head: Col titles + PK/Types -->
-                        <thead class="grid-header-sticky bg-[#1f2335] text-slate-300 font-mono shadow">
+                        <thead class="grid-header-sticky text-[#c0caf5] font-mono-code shadow-md">
                             <tr id="headerRow"></tr>
                         </thead>
                         <!-- Head Row 2: Per-column filter inputs -->
-                        <thead class="grid-filter-sticky bg-[#1b1e2e] border-b border-slate-700/80">
+                        <thead class="grid-filter-sticky border-b border-[#2f354d]">
                             <tr id="filterRow"></tr>
                         </thead>
-                        <!-- Body -->
-                        <tbody id="tableBody" class="font-mono divide-y divide-slate-800/60"></tbody>
+                        <!-- Body Rows -->
+                        <tbody id="tableBody" class="font-mono-code divide-y divide-[#24283b]"></tbody>
                     </table>
                 </div>
 
                 <!-- Bottom Pagination Bar -->
-                <div id="paginationBar" class="dark-header border-t px-3 py-1.5 flex items-center justify-between flex-shrink-0 text-[11px] font-mono text-slate-400">
+                <div id="paginationBar" class="bg-[#1f2335] border-t border-[#2f354d] px-3.5 py-2 flex items-center justify-between flex-shrink-0 text-[11px] font-mono-code text-[#9aa5ce]">
                     <!-- Page Steppers -->
-                    <div class="flex items-center space-x-1">
-                        <button onclick="goToPage(1)" id="btnPageFirst" title="First Page" class="btn-ghost px-2 py-0.5 rounded disabled:opacity-30">|◀</button>
-                        <button onclick="prevPage()" id="btnPagePrev" title="Previous Page" class="btn-ghost px-2 py-0.5 rounded disabled:opacity-30">◀</button>
+                    <div class="flex items-center space-x-1.5">
+                        <button onclick="goToPage(1)" id="btnPageFirst" title="First Page" class="btn-toolbar px-2 py-1 rounded cursor-pointer">
+                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="11 17 6 12 11 7"></polyline><polyline points="18 17 13 12 18 7"></polyline></svg>
+                        </button>
+                        <button onclick="prevPage()" id="btnPagePrev" title="Previous Page" class="btn-toolbar px-2 py-1 rounded cursor-pointer">
+                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"></polyline></svg>
+                        </button>
                         
-                        <div class="flex items-center space-x-1 px-1">
-                            <span>Page</span>
+                        <div class="flex items-center space-x-1.5 px-1.5">
+                            <span class="text-[#565f89]">Page</span>
                             <input id="pageInput" type="number" min="1" value="1" onchange="onPageInputChange(this.value)" 
-                                   class="w-12 bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-center text-pink-300 focus:outline-none focus:border-pink-400" />
-                            <span>of <span id="totalPagesLabel">1</span></span>
+                                   class="w-12 bg-[#16161e] border border-[#2f354d] rounded px-1.5 py-0.5 text-center text-[#f7768e] font-bold focus:outline-none focus:border-[#f7768e]" />
+                            <span class="text-[#565f89]">of <span id="totalPagesLabel" class="text-[#c0caf5]">1</span></span>
                         </div>
 
-                        <button onclick="nextPage()" id="btnPageNext" title="Next Page" class="btn-ghost px-2 py-0.5 rounded disabled:opacity-30">▶</button>
-                        <button onclick="goToPage(state.totalPages)" id="btnPageLast" title="Last Page" class="btn-ghost px-2 py-0.5 rounded disabled:opacity-30">▶|</button>
+                        <button onclick="nextPage()" id="btnPageNext" title="Next Page" class="btn-toolbar px-2 py-1 rounded cursor-pointer">
+                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                        </button>
+                        <button onclick="goToPage(state.totalPages)" id="btnPageLast" title="Last Page" class="btn-toolbar px-2 py-1 rounded cursor-pointer">
+                            <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="13 17 18 12 13 7"></polyline><polyline points="6 17 11 12 6 7"></polyline></svg>
+                        </button>
                     </div>
 
                     <!-- Range Counter -->
-                    <div id="showingRangeText" class="text-slate-400 text-center">
-                        Showing 0 of 0 rows
+                    <div id="showingRangeText" class="text-[#9aa5ce] text-center font-medium">
+                        Showing 0 - 0 of 0 rows
                     </div>
 
                     <!-- Page Size Selector -->
-                    <div class="flex items-center space-x-1.5">
-                        <span>Rows per page:</span>
-                        <select id="pageSizeSelect" onchange="onPageSizeChange(this.value)" class="bg-slate-900 border border-slate-700 text-cyan-300 rounded px-1.5 py-0.5 focus:outline-none focus:border-cyan-400">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-[#565f89]">Rows:</span>
+                        <select id="pageSizeSelect" onchange="onPageSizeChange(this.value)" class="bg-[#16161e] border border-[#2f354d] text-[#7dcfff] font-bold rounded px-2 py-0.5 focus:outline-none focus:border-[#7dcfff] cursor-pointer">
                             <option value="25">25</option>
                             <option value="50" selected>50</option>
                             <option value="100">100</option>
@@ -241,35 +403,51 @@
     </div>
 
     <!-- Row Detail Modal / Inspector Popup -->
-    <div id="rowDetailModal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
-        <div class="dark-card border border-slate-600 rounded-xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-fade-in">
+    <div id="rowDetailModal" class="hidden fixed inset-0 z-50 bg-[#0f111a]/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#1a1b26] border border-[#3b4261] rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden toast-animate">
             <!-- Modal Header -->
-            <div class="dark-header border-b px-4 py-2.5 flex items-center justify-between">
-                <div class="flex items-center space-x-2">
-                    <button onclick="stepModalRow(-1)" id="btnModalPrev" title="Previous record (↑)" class="btn-ghost px-2 py-1 rounded text-xs">↑</button>
-                    <button onclick="stepModalRow(1)" id="btnModalNext" title="Next record (↓)" class="btn-ghost px-2 py-1 rounded text-xs">↓</button>
-                    <span class="text-sm">🌸</span>
-                    <h3 id="modalTitle" class="font-bold cyan-accent text-sm">Table / 1</h3>
+            <div class="bg-[#1f2335] border-b border-[#2f354d] px-4 py-3 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="flex items-center space-x-1">
+                        <button onclick="stepModalRow(-1)" id="btnModalPrev" title="Previous record (↑)" class="btn-toolbar px-2 py-1 rounded cursor-pointer">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                        </button>
+                        <button onclick="stepModalRow(1)" id="btnModalNext" title="Next record (↓)" class="btn-toolbar px-2 py-1 rounded cursor-pointer">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
+                    </div>
+                    <div class="h-4 w-px bg-[#2f354d]"></div>
+                    <div class="flex items-center space-x-2">
+                        <svg class="w-4 h-4 text-[#f7768e]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line></svg>
+                        <h3 id="modalTitle" class="font-bold text-[#7dcfff] text-sm">Table / Row 1</h3>
+                    </div>
                 </div>
-                <button onclick="closeRowDetailModal()" class="text-slate-400 hover:text-pink-400 text-base font-bold px-2 py-0.5 transition">✕</button>
+
+                <button onclick="closeRowDetailModal()" class="text-[#565f89] hover:text-[#f7768e] p-1 rounded-lg cursor-pointer transition">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
             </div>
 
             <!-- Modal Content (Fields List) -->
-            <div id="modalFieldsList" class="flex-1 overflow-y-auto p-4 space-y-3 bg-[#1a1b26]/70">
-                <!-- Dynamically injected fields -->
+            <div id="modalFieldsList" class="flex-1 overflow-y-auto p-4 space-y-3 bg-[#16161e]/60 font-mono-code">
+                <!-- Dynamically populated fields -->
             </div>
 
             <!-- Modal Footer -->
-            <div class="dark-header border-t px-4 py-2 flex justify-end space-x-2">
-                <button onclick="closeRowDetailModal()" class="btn-ghost px-4 py-1 rounded text-slate-300 hover:text-white">Close</button>
+            <div class="bg-[#1f2335] border-t border-[#2f354d] px-4 py-2.5 flex justify-between items-center">
+                <span class="text-[11px] text-[#565f89]">Press <kbd class="px-1.5 py-0.5 bg-[#16161e] border border-[#2f354d] rounded text-[#9aa5ce]">Esc</kbd> to close</span>
+                <button onclick="closeRowDetailModal()" class="btn-toolbar px-4 py-1.5 rounded-lg text-xs font-semibold cursor-pointer">Close</button>
             </div>
         </div>
     </div>
 
+    <!-- Global Toast Notification Container -->
+    <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
     <script>
         const vscode = acquireVsCodeApi();
 
-        // Application State
+        // State Machine
         const state = {
             tables: [],
             activeTable: null,
@@ -290,9 +468,11 @@
 
         // DOM Element Cache
         const statusBadge = document.getElementById('statusBadge');
+        const statusText = document.getElementById('statusText');
         const tableList = document.getElementById('tableList');
         const tablesCountBadge = document.getElementById('tablesCountBadge');
         const tableSearchInput = document.getElementById('tableSearchInput');
+        const clearTableSearchBtn = document.getElementById('clearTableSearchBtn');
         const activeTableName = document.getElementById('activeTableName');
         const activeTableRowCountBadge = document.getElementById('activeTableRowCountBadge');
         const globalFilterInput = document.getElementById('globalFilterInput');
@@ -316,11 +496,12 @@
         const rowDetailModal = document.getElementById('rowDetailModal');
         const modalTitle = document.getElementById('modalTitle');
         const modalFieldsList = document.getElementById('modalFieldsList');
+        const toastContainer = document.getElementById('toastContainer');
 
-        // Initial Load
+        // Request Table Catalog
         vscode.postMessage({ type: 'GET_TABLES' });
 
-        // Keyboard Shortcuts
+        // Global Keybindings
         queryInput.addEventListener('keydown', (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                 e.preventDefault();
@@ -331,17 +512,25 @@
         window.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && !rowDetailModal.classList.contains('hidden')) {
                 closeRowDetailModal();
+            } else if (!rowDetailModal.classList.contains('hidden')) {
+                if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    stepModalRow(-1);
+                } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    stepModalRow(1);
+                }
             }
         });
 
-        // Communication Listener
+        // Communication Handler
         window.addEventListener('message', (event) => {
             const msg = event.data;
             switch (msg.type) {
                 case 'SET_TABLES':
                     state.tables = msg.tables || [];
                     renderTablesSidebar();
-                    statusBadge.innerText = '(｡•̀ᴗ-)✧ Status: Ready';
+                    setStatus('(｡•̀ᴗ-)✧ Status: Ready');
                     if (state.tables.length > 0 && !state.activeTable) {
                         selectTable(state.tables[0].name);
                     }
@@ -361,11 +550,11 @@
 
                     renderGrid();
                     updatePaginationUI();
-                    statusBadge.innerText = `(๑˃̵ᴗ˂̵) ${state.activeTable} Loaded!`;
+                    setStatus(`(๑˃̵ᴗ˂̵) ${state.activeTable} Loaded!`);
                     break;
 
                 case 'QUERY_RESULT':
-                    statusBadge.innerText = '(๑˃̵ᴗ˂̵) Query Completed!';
+                    setStatus('(๑˃̵ᴗ˂̵) Query Completed!');
                     state.activeTable = '(Console Query)';
                     state.columns = msg.columns || [];
                     state.columnMeta = state.columns.map(c => ({ name: c, type: 'TEXT', pk: 0 }));
@@ -380,14 +569,18 @@
                     break;
 
                 case 'ERROR':
-                    statusBadge.innerText = '(>_<) Query Error!';
-                    showErrorNotification(msg.message);
+                    setStatus('(>_<) Query Error!');
+                    showToast(`Error: ${msg.message}`, 'error');
                     break;
             }
         });
 
+        function setStatus(text) {
+            statusText.innerText = text;
+        }
+
         function reloadDatabase() {
-            statusBadge.innerText = '(⁠*⁠_⁠*⁠) Reloading Database...';
+            setStatus('(⁠*⁠_⁠*⁠) Reloading Database...');
             vscode.postMessage({ type: 'RELOAD_DATABASE' });
         }
 
@@ -401,7 +594,7 @@
 
         function fetchCurrentTableData() {
             if (!state.activeTable || state.activeTable === '(Console Query)') return;
-            statusBadge.innerText = `(⁠*⁠_⁠*⁠) Fetching: ${state.activeTable}...`;
+            setStatus(`(⁠*⁠_⁠*⁠) Fetching: ${state.activeTable}...`);
             vscode.postMessage({
                 type: 'SELECT_TABLE',
                 table: state.activeTable,
@@ -436,25 +629,30 @@
             const filtered = state.tables.filter(t => t.name.toLowerCase().includes(filterText));
 
             if (filtered.length === 0) {
-                tableList.innerHTML = '<div class="text-[11px] text-slate-500 italic p-3 text-center">No matching tables found.</div>';
+                tableList.innerHTML = '<div class="text-[11px] text-[#565f89] italic p-4 text-center">No matching tables found.</div>';
                 return;
             }
 
             filtered.forEach(table => {
                 const btn = document.createElement('button');
                 const isActive = table.name === state.activeTable;
-                btn.className = `w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between font-mono text-xs transition ${
+                btn.className = `w-full text-left px-2.5 py-1.5 rounded-lg flex items-center justify-between font-mono-code text-xs transition cursor-pointer group ${
                     isActive 
-                        ? 'bg-purple-900/60 border border-pink-500/50 text-pink-300 font-semibold shadow-inner' 
-                        : 'text-slate-300 hover:bg-slate-800/60 hover:text-cyan-300'
+                        ? 'bg-[#bb9af7]/15 border-l-4 border-l-[#f7768e] border-y border-r border-[#bb9af7]/30 text-[#f7768e] font-bold shadow-sm' 
+                        : 'text-[#9aa5ce] hover:bg-[#1f2335] hover:text-[#7dcfff]'
                 }`;
 
                 btn.innerHTML = `
-                    <span class="truncate flex items-center space-x-1.5">
-                        <span class="text-xs">🌸</span>
-                        <span title="${table.name}">${table.name}</span>
+                    <span class="truncate flex items-center space-x-2">
+                        <svg class="w-3.5 h-3.5 ${isActive ? 'text-[#f7768e]' : 'text-[#565f89] group-hover:text-[#7dcfff]'} transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="4" y1="9" x2="20" y2="9"></line>
+                            <line x1="4" y1="15" x2="20" y2="15"></line>
+                            <line x1="10" y1="3" x2="8" y2="21"></line>
+                            <line x1="16" y1="3" x2="14" y2="21"></line>
+                        </svg>
+                        <span class="truncate" title="${table.name}">${table.name}</span>
                     </span>
-                    <span class="text-[10px] text-slate-400 bg-slate-900/80 px-1.5 py-0.2 rounded-full border border-slate-700/50">
+                    <span class="text-[10px] text-[#565f89] bg-[#16161e] px-1.5 py-0.5 rounded-full border border-[#2f354d]">
                         ${table.rowCount.toLocaleString()}
                     </span>
                 `;
@@ -465,6 +663,17 @@
         }
 
         function filterTableList() {
+            if (tableSearchInput.value) {
+                clearTableSearchBtn.classList.remove('hidden');
+            } else {
+                clearTableSearchBtn.classList.add('hidden');
+            }
+            renderTablesSidebar();
+        }
+
+        function clearTableSearch() {
+            tableSearchInput.value = '';
+            clearTableSearchBtn.classList.add('hidden');
             renderTablesSidebar();
         }
 
@@ -481,7 +690,7 @@
         function runQuery() {
             const query = queryInput.value.trim();
             if (!query) return;
-            statusBadge.innerText = '(ง •̀_•́)ง Querying...';
+            setStatus('(ง •̀_•́)ง Querying...');
             vscode.postMessage({ type: 'EXECUTE_QUERY', query });
         }
 
@@ -507,7 +716,7 @@
             fetchCurrentTableData();
         }
 
-        function debounceFetch(fn, delay = 300) {
+        function debounceFetch(fn, delay = 250) {
             clearTimeout(state.filterDebounceTimer);
             state.filterDebounceTimer = setTimeout(fn, delay);
         }
@@ -516,19 +725,65 @@
             return state.columnMeta.find(c => c.name === colName) || { name: colName, type: 'TEXT', pk: 0 };
         }
 
-        function getTypeIcon(type, isPk) {
-            if (isPk) return '<span title="Primary Key" class="text-yellow-400 font-bold">🔑</span>';
+        // Professional SVG Icons for Data Types & Badges
+        function getTypeIconSVG(type, isPk) {
+            if (isPk) {
+                return `
+                    <span title="Primary Key" class="inline-flex text-[#e0af68]">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 2l-2 2m-1.5 1.5L19 7l-3 3-2.5-.5L12 11l-3 3 1.5 1.5L9 17l-1.5-1.5L6 17l-4 4 4-4v-2l1.5-1.5L6 12l3-3 1.5 1.5.5-2.5 3-3z"></path>
+                            <circle cx="16.5" cy="7.5" r="2.5"></circle>
+                        </svg>
+                    </span>
+                `;
+            }
             const upper = (type || '').toUpperCase();
-            if (upper.includes('INT') || upper.includes('NUM') || upper.includes('REAL') || upper.includes('DECIMAL')) {
-                return '<span title="Numeric" class="text-cyan-400 font-bold">#</span>';
+            if (upper.includes('INT') || upper.includes('NUM') || upper.includes('REAL') || upper.includes('DECIMAL') || upper.includes('FLOAT')) {
+                return `
+                    <span title="Numeric (#)" class="inline-flex text-[#7dcfff]">
+                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="4" y1="9" x2="20" y2="9"></line>
+                            <line x1="4" y1="15" x2="20" y2="15"></line>
+                            <line x1="10" y1="3" x2="8" y2="21"></line>
+                            <line x1="16" y1="3" x2="14" y2="21"></line>
+                        </svg>
+                    </span>
+                `;
             }
             if (upper.includes('BLOB') || upper.includes('BINARY')) {
-                return '<span title="Binary BLOB" class="text-purple-400">📦</span>';
+                return `
+                    <span title="Binary BLOB" class="inline-flex text-[#bb9af7]">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                        </svg>
+                    </span>
+                `;
             }
             if (upper.includes('DATE') || upper.includes('TIME')) {
-                return '<span title="Date/Time" class="text-yellow-300">📅</span>';
+                return `
+                    <span title="Date/Time" class="inline-flex text-[#e0af68]">
+                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                    </span>
+                `;
             }
-            return '<span title="Text" class="text-emerald-400">🗎</span>';
+            return `
+                <span title="Text" class="inline-flex text-[#9ece6a]">
+                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                </span>
+            `;
         }
 
         function renderGrid() {
@@ -546,31 +801,51 @@
             activeTableRowCountBadge.classList.remove('hidden');
             activeTableRowCountBadge.innerText = `Rows: ${state.totalRows.toLocaleString()}`;
 
-            // Render Header Row 1 (Titles & Type Icons & Sort)
+            // Render Header Row 1 (Titles, Types, Sorter)
             headerRow.innerHTML = '';
             
-            // # index column header
+            // # index header
             const thIndex = document.createElement('th');
-            thIndex.className = 'p-2 text-center text-slate-500 font-bold bg-[#1f2335] border-b border-r border-slate-700/80 col-index-sticky left-0 w-12';
+            thIndex.className = 'p-2 text-center text-[#565f89] font-bold border-b border-r border-[#2f354d] col-index-sticky left-0 w-12';
             thIndex.innerText = '#';
             headerRow.appendChild(thIndex);
 
             state.columns.forEach(col => {
                 const meta = getColumnMeta(col);
                 const th = document.createElement('th');
-                th.className = 'p-2 border-b border-r border-slate-700/80 text-pink-300 font-semibold cursor-pointer select-none hover:bg-slate-800/50 transition';
+                th.className = 'p-2 border-b border-r border-[#2f354d] text-[#c0caf5] font-semibold cursor-pointer select-none hover:bg-[#292e42] transition group';
                 
                 const isSorted = state.sortColumn === col;
-                const sortIcon = isSorted ? (state.sortDirection === 'ASC' ? '▲' : '▼') : '⇅';
-                const sortClass = isSorted ? 'text-cyan-300' : 'text-slate-500';
+                let sortSvg = `
+                    <svg class="w-3 h-3 text-[#565f89] group-hover:text-[#7dcfff] transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="7 10 12 5 17 10"></polyline>
+                        <polyline points="7 14 12 19 17 14"></polyline>
+                    </svg>
+                `;
+
+                if (isSorted) {
+                    if (state.sortDirection === 'ASC') {
+                        sortSvg = `
+                            <svg class="w-3.5 h-3.5 text-[#7dcfff]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="18 15 12 9 6 15"></polyline>
+                            </svg>
+                        `;
+                    } else {
+                        sortSvg = `
+                            <svg class="w-3.5 h-3.5 text-[#7dcfff]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        `;
+                    }
+                }
 
                 th.innerHTML = `
                     <div class="flex items-center justify-between space-x-2">
                         <span class="flex items-center space-x-1.5 truncate">
-                            <span>${getTypeIcon(meta.type, meta.pk > 0)}</span>
-                            <span class="truncate" title="${col} (${meta.type || 'TEXT'})">${col}</span>
+                            ${getTypeIconSVG(meta.type, meta.pk > 0)}
+                            <span class="truncate ${meta.pk > 0 ? 'text-[#f7768e] font-bold' : ''}" title="${col} (${meta.type || 'TEXT'})">${col}</span>
                         </span>
-                        <span class="text-[10px] ${sortClass}">${sortIcon}</span>
+                        <span class="flex-shrink-0">${sortSvg}</span>
                     </div>
                 `;
 
@@ -581,21 +856,23 @@
             // Render Header Row 2 (Inline Column Filters)
             filterRow.innerHTML = '';
             const thFilterBlank = document.createElement('th');
-            thFilterBlank.className = 'p-1 bg-[#1b1e2e] border-r border-slate-700/80 text-center col-index-sticky left-0';
+            thFilterBlank.className = 'p-1 bg-[#1a1b26] border-r border-[#2f354d] text-center col-index-sticky left-0';
             thFilterBlank.innerHTML = `
-                <button onclick="clearAllColumnFilters()" title="Clear column filters" class="text-[10px] text-slate-500 hover:text-pink-400">✕</button>
+                <button onclick="clearAllColumnFilters()" title="Reset all column filters" class="text-[10px] text-[#565f89] hover:text-[#f7768e] p-1 cursor-pointer">
+                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
             `;
             filterRow.appendChild(thFilterBlank);
 
             state.columns.forEach(col => {
                 const th = document.createElement('th');
-                th.className = 'p-1 bg-[#1b1e2e] border-r border-slate-700/80';
+                th.className = 'p-1 bg-[#1a1b26] border-r border-[#2f354d]';
                 
                 const input = document.createElement('input');
                 input.type = 'text';
-                input.placeholder = `Filter col...`;
+                input.placeholder = `Filter...`;
                 input.value = state.columnFilters[col] || '';
-                input.className = 'w-full bg-slate-900/90 border border-slate-700/80 rounded px-1.5 py-0.5 text-[10px] text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-400 font-normal';
+                input.className = 'w-full bg-[#16161e] border border-[#2f354d] rounded px-1.5 py-0.5 text-[10px] text-[#c0caf5] placeholder-[#565f89] focus:outline-none focus:border-[#7dcfff] font-mono-code transition';
                 
                 input.oninput = (e) => {
                     const val = e.target.value;
@@ -619,8 +896,8 @@
             if (state.rows.length === 0) {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td colspan="${state.columns.length + 1}" class="p-8 text-center text-slate-500 italic">
-                        (つ﹏<) No records found matching the filter criteria.
+                    <td colspan="${state.columns.length + 1}" class="p-10 text-center text-[#565f89] italic">
+                        (つ﹏<) No records found matching the active filter.
                     </td>
                 `;
                 tableBody.appendChild(tr);
@@ -631,42 +908,52 @@
 
             state.rows.forEach((row, rIdx) => {
                 const tr = document.createElement('tr');
-                tr.className = 'border-b border-slate-800/80 hover:bg-purple-900/20 cursor-pointer transition';
+                tr.className = 'border-b border-[#24283b] hover:bg-[#bb9af7]/10 cursor-pointer transition group';
 
-                // Row index number cell
+                // Row index cell
                 const tdIndex = document.createElement('td');
-                tdIndex.className = 'p-1.5 text-center text-slate-500 font-bold bg-[#1a1b26] border-r border-slate-800 col-index-sticky left-0';
+                tdIndex.className = 'p-1.5 text-center text-[#565f89] font-bold bg-[#16161e] border-r border-[#24283b] col-index-sticky left-0';
                 tdIndex.innerText = (rowOffset + rIdx + 1).toLocaleString();
                 tr.appendChild(tdIndex);
 
-                // Data cells
+                // Field value cells
                 row.forEach((val, cIdx) => {
                     const td = document.createElement('td');
-                    td.className = 'p-1.5 border-r border-slate-800/80 text-slate-300 max-w-xs truncate';
+                    td.className = 'p-1.5 border-r border-[#24283b] text-[#c0caf5] max-w-xs truncate relative group/cell';
 
                     if (val === null) {
-                        td.innerHTML = '<i class="text-slate-600">null</i>';
+                        td.innerHTML = '<span class="italic text-[#565f89] text-[10px]">null</span>';
                     } else if (typeof val === 'object' && val.__isBlob) {
                         if (val.mimeType && val.mimeType.startsWith('image/')) {
                             td.innerHTML = `
-                                <div class="flex items-center space-x-1.5">
-                                    <img src="data:${val.mimeType};base64,${val.base64}" class="w-7 h-7 object-cover rounded border border-purple-500/40 shadow-sm" />
-                                    <span class="text-[10px] text-purple-300 bg-purple-950/60 px-1 py-0.2 rounded border border-purple-700/50">${formatBytes(val.size)}</span>
+                                <div class="flex items-center space-x-2">
+                                    <img src="data:${val.mimeType};base64,${val.base64}" class="w-6 h-6 object-cover rounded border border-[#bb9af7]/40 shadow-sm" />
+                                    <span class="text-[10px] text-[#bb9af7] bg-[#bb9af7]/15 px-1 py-0.2 rounded border border-[#bb9af7]/30">${formatBytes(val.size)}</span>
                                 </div>
                             `;
                         } else {
-                            td.innerHTML = `<span class="text-[10px] text-cyan-300 bg-slate-900 px-1.5 py-0.5 rounded border border-cyan-800/50">📦 BLOB (${formatBytes(val.size)})</span>`;
+                            td.innerHTML = `<span class="text-[10px] text-[#7dcfff] bg-[#1f2335] px-1.5 py-0.5 rounded border border-[#7dcfff]/30">BLOB (${formatBytes(val.size)})</span>`;
                         }
                     } else {
-                        td.innerText = String(val);
-                        td.title = String(val);
+                        const strVal = String(val);
+                        td.innerHTML = `
+                            <div class="flex items-center justify-between space-x-1">
+                                <span class="truncate" title="${strVal}">${escapeHtml(strVal)}</span>
+                                <button onclick="copyToClipboard(event, '${escapeJs(strVal)}')" title="Copy cell value" class="cell-hover-btn text-[#565f89] hover:text-[#7dcfff] p-0.5 rounded cursor-pointer transition">
+                                    <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                </button>
+                            </div>
+                        `;
                     }
 
                     tr.appendChild(td);
                 });
 
-                // Row click opens the Detail Modal
-                tr.onclick = () => openRowDetailModal(rIdx);
+                // Row click triggers Row Inspector Modal
+                tr.onclick = (e) => {
+                    if (e.target.closest('button')) return; // Ignore copy button clicks
+                    openRowDetailModal(rIdx);
+                };
                 tableBody.appendChild(tr);
             });
         }
@@ -759,7 +1046,7 @@
             if (!row) return;
 
             const globalRowNumber = (state.page - 1) * state.pageSize + state.selectedRowIndex + 1;
-            modalTitle.innerText = `${state.activeTable} / Row ${globalRowNumber}`;
+            modalTitle.innerText = `${state.activeTable} / Record #${globalRowNumber}`;
 
             document.getElementById('btnModalPrev').disabled = state.selectedRowIndex <= 0;
             document.getElementById('btnModalNext').disabled = state.selectedRowIndex >= state.rows.length - 1;
@@ -770,22 +1057,24 @@
                 const meta = getColumnMeta(col);
                 const val = row[cIdx];
                 const fieldCard = document.createElement('div');
-                fieldCard.className = 'dark-card border rounded-lg p-3 space-y-1.5';
+                fieldCard.className = 'bg-[#1f2335] border border-[#2f354d] rounded-xl p-3 space-y-2 shadow-sm';
 
                 const header = document.createElement('div');
-                header.className = 'flex items-center justify-between text-[11px]';
+                header.className = 'flex items-center justify-between text-xs';
                 
                 const leftLabel = `
-                    <span class="flex items-center space-x-1.5 font-bold pink-accent">
-                        ${getTypeIcon(meta.type, meta.pk > 0)}
+                    <span class="flex items-center space-x-2 font-bold ${meta.pk > 0 ? 'text-[#f7768e]' : 'text-[#c0caf5]'}">
+                        ${getTypeIconSVG(meta.type, meta.pk > 0)}
                         <span>${col}</span>
                     </span>
                 `;
 
                 const rightBadge = `
-                    <span class="text-[10px] text-cyan-300 bg-slate-900 px-2 py-0.5 rounded border border-cyan-800/50 uppercase font-mono">
-                        ${meta.pk > 0 ? 'PK • ' : ''}${meta.type || 'TEXT'}
-                    </span>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-[10px] text-[#7dcfff] bg-[#16161e] px-2 py-0.5 rounded-full border border-[#7dcfff]/30 font-semibold uppercase">
+                            ${meta.pk > 0 ? 'PRIMARY KEY • ' : ''}${meta.type || 'TEXT'}
+                        </span>
+                    </div>
                 `;
 
                 header.innerHTML = leftLabel + rightBadge;
@@ -794,18 +1083,18 @@
                 // Content render
                 if (val === null) {
                     const nullDiv = document.createElement('div');
-                    nullDiv.className = 'text-slate-500 italic bg-slate-900/60 p-2 rounded border border-slate-800 text-xs';
+                    nullDiv.className = 'text-[#565f89] italic bg-[#16161e] p-2.5 rounded-lg border border-[#2f354d] text-xs';
                     nullDiv.innerText = 'null';
                     fieldCard.appendChild(nullDiv);
                 } else if (typeof val === 'object' && val.__isBlob) {
                     const blobDiv = document.createElement('div');
-                    blobDiv.className = 'space-y-2 bg-slate-950/70 p-3 rounded border border-slate-800';
+                    blobDiv.className = 'space-y-2.5 bg-[#16161e] p-3 rounded-lg border border-[#2f354d]';
 
                     let previewHtml = '';
                     if (val.mimeType && val.mimeType.startsWith('image/')) {
                         previewHtml = `
-                            <div class="flex justify-center p-2 bg-slate-900/80 rounded border border-slate-800">
-                                <img src="data:${val.mimeType};base64,${val.base64}" class="max-h-52 object-contain rounded shadow" />
+                            <div class="flex justify-center p-3 bg-[#12131a] rounded-lg border border-[#2f354d]">
+                                <img src="data:${val.mimeType};base64,${val.base64}" class="max-h-56 object-contain rounded-md shadow-lg" />
                             </div>
                         `;
                     }
@@ -813,9 +1102,9 @@
                     blobDiv.innerHTML = `
                         ${previewHtml}
                         <div class="flex items-center justify-between pt-1">
-                            <span class="text-[11px] text-slate-400 font-mono">Size: ${formatBytes(val.size)} (${val.mimeType || 'binary'})</span>
-                            <button onclick="downloadBlob('${col}', ${state.selectedRowIndex})" class="btn-ghost text-cyan-300 text-xs px-3 py-1 rounded flex items-center space-x-1">
-                                <span>⬇</span>
+                            <span class="text-[11px] text-[#9aa5ce]">Size: ${formatBytes(val.size)} (${val.mimeType || 'binary'})</span>
+                            <button onclick="downloadBlob('${col}', ${state.selectedRowIndex})" class="btn-toolbar text-[#7dcfff] text-xs px-3 py-1.5 rounded-md flex items-center space-x-1.5 cursor-pointer font-semibold">
+                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                                 <span>Download BLOB</span>
                             </button>
                         </div>
@@ -825,21 +1114,33 @@
                     const strVal = String(val);
                     const isLong = strVal.length > 80 || strVal.includes('\n');
                     
+                    const container = document.createElement('div');
+                    container.className = 'relative flex items-center';
+
                     if (isLong) {
                         const textarea = document.createElement('textarea');
                         textarea.readOnly = true;
                         textarea.rows = Math.min(6, Math.max(2, strVal.split('\n').length));
                         textarea.value = strVal;
-                        textarea.className = 'w-full bg-slate-900/90 border border-slate-700/80 rounded p-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-cyan-400';
-                        fieldCard.appendChild(textarea);
+                        textarea.className = 'w-full bg-[#16161e] border border-[#2f354d] rounded-lg p-2.5 text-xs text-[#c0caf5] focus:outline-none focus:border-[#7dcfff]';
+                        container.appendChild(textarea);
                     } else {
                         const input = document.createElement('input');
                         input.type = 'text';
                         input.readOnly = true;
                         input.value = strVal;
-                        input.className = 'w-full bg-slate-900/90 border border-slate-700/80 rounded px-2.5 py-1 text-xs font-mono text-slate-200 focus:outline-none focus:border-cyan-400';
-                        fieldCard.appendChild(input);
+                        input.className = 'w-full bg-[#16161e] border border-[#2f354d] rounded-lg pl-2.5 pr-8 py-1.5 text-xs text-[#c0caf5] focus:outline-none focus:border-[#7dcfff]';
+                        container.appendChild(input);
                     }
+
+                    const copyBtn = document.createElement('button');
+                    copyBtn.className = 'absolute right-2 top-2 text-[#565f89] hover:text-[#7dcfff] p-1 rounded cursor-pointer transition';
+                    copyBtn.title = 'Copy value';
+                    copyBtn.innerHTML = `<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>`;
+                    copyBtn.onclick = (e) => copyToClipboard(e, strVal);
+                    container.appendChild(copyBtn);
+
+                    fieldCard.appendChild(container);
                 }
 
                 modalFieldsList.appendChild(fieldCard);
@@ -868,18 +1169,34 @@
             });
         }
 
-        function showErrorNotification(message) {
-            const banner = document.createElement('div');
-            banner.className = 'fixed bottom-4 right-4 z-50 bg-red-950/90 border border-red-500/80 text-red-200 px-4 py-2.5 rounded-lg shadow-xl text-xs flex items-center space-x-2 animate-bounce';
-            banner.innerHTML = `
-                <span>(>_<)</span>
-                <span>Error: ${message}</span>
-                <button onclick="this.parentElement.remove()" class="text-red-400 font-bold ml-2">✕</button>
+        function copyToClipboard(event, text) {
+            event.stopPropagation();
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Copied to clipboard!', 'success');
+            }).catch(() => {
+                showToast('Failed to copy', 'error');
+            });
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            const borderColor = type === 'error' ? 'border-[#f7768e]' : 'border-[#7dcfff]';
+            const textColor = type === 'error' ? 'text-[#f7768e]' : 'text-[#7dcfff]';
+            const kaomoji = type === 'error' ? '(>_<)' : '(๑˃̵ᴗ˂̵)';
+
+            toast.className = `bg-[#1f2335]/95 border ${borderColor} ${textColor} px-3.5 py-2 rounded-xl shadow-2xl text-xs font-mono-code flex items-center space-x-2 toast-animate`;
+            toast.innerHTML = `
+                <span class="font-bold">${kaomoji}</span>
+                <span>${escapeHtml(message)}</span>
             `;
-            document.body.appendChild(banner);
+
+            toastContainer.appendChild(toast);
             setTimeout(() => {
-                if (banner.parentElement) banner.remove();
-            }, 6000);
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(8px)';
+                toast.style.transition = 'all 0.2s ease';
+                setTimeout(() => toast.remove(), 200);
+            }, 3000);
         }
 
         function formatBytes(bytes) {
@@ -888,6 +1205,19 @@
             const sizes = ['B', 'KB', 'MB', 'GB'];
             const i = Math.floor(Math.log(bytes) / Math.log(k));
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function escapeHtml(text) {
+            return String(text)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function escapeJs(text) {
+            return String(text).replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n');
         }
     </script>
 </body>

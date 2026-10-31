@@ -1,0 +1,52 @@
+{
+  "name": "chibisql",
+  "displayName": "ChibiSQL - Anime SQLite Editor",
+  "description": "Anime-themed SQLite Database Reader & Editor for VS Code & Cursor",
+  "version": "0.0.1",
+  "publisher": "chibisql",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Other",
+    "Data Science"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onCustomEditor:chibisql.dbEditor"
+  ],
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "chibisql.dbEditor",
+        "displayName": "ChibiSQL Editor",
+        "selector": [
+          {
+            "filenamePattern": "*.db"
+          },
+          {
+            "filenamePattern": "*.sqlite"
+          },
+          {
+            "filenamePattern": "*.sqlite3"
+          }
+        ],
+        "priority": "default"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "dependencies": {
+    "sql.js": "^1.11.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/sql.js": "^1.4.9",
+    "@types/vscode": "^1.80.0",
+    "typescript": "^5.0.0"
+  }
+}

@@ -4,6 +4,7 @@ exports.DbEditorProvider = void 0;
 const vscode = require("vscode");
 const path = require("path");
 const fs = require("fs");
+const buffer_1 = require("buffer");
 const sql_js_1 = require("sql.js");
 class DbEditorProvider {
     context;
@@ -263,7 +264,7 @@ class DbEditorProvider {
                             saveLabel: 'Save BLOB Data'
                         });
                         if (saveUri) {
-                            const buffer = Buffer.from(base64, 'base64');
+                            const buffer = buffer_1.Buffer.from(base64, 'base64');
                             await vscode.workspace.fs.writeFile(saveUri, buffer);
                             vscode.window.showInformationMessage(`ChibiSQL: Saved ${filename} successfully!`);
                         }
@@ -287,19 +288,19 @@ class DbEditorProvider {
             u8[5] === 0x0a &&
             u8[6] === 0x1a &&
             u8[7] === 0x0a) {
-            return { mimeType: 'image/png', base64: Buffer.from(u8).toString('base64') };
+            return { mimeType: 'image/png', base64: buffer_1.Buffer.from(u8).toString('base64') };
         }
         // JPEG detection
         if (u8.length >= 3 && u8[0] === 0xff && u8[1] === 0xd8 && u8[2] === 0xff) {
-            return { mimeType: 'image/jpeg', base64: Buffer.from(u8).toString('base64') };
+            return { mimeType: 'image/jpeg', base64: buffer_1.Buffer.from(u8).toString('base64') };
         }
         // GIF detection
         if (u8.length >= 6 && u8[0] === 0x47 && u8[1] === 0x49 && u8[2] === 0x46 && u8[3] === 0x38) {
-            return { mimeType: 'image/gif', base64: Buffer.from(u8).toString('base64') };
+            return { mimeType: 'image/gif', base64: buffer_1.Buffer.from(u8).toString('base64') };
         }
         // BMP detection
         if (u8.length >= 2 && u8[0] === 0x42 && u8[1] === 0x4d) {
-            return { mimeType: 'image/bmp', base64: Buffer.from(u8).toString('base64') };
+            return { mimeType: 'image/bmp', base64: buffer_1.Buffer.from(u8).toString('base64') };
         }
         // WebP detection
         if (u8.length >= 12 &&
@@ -311,18 +312,18 @@ class DbEditorProvider {
             u8[9] === 0x45 &&
             u8[10] === 0x42 &&
             u8[11] === 0x50) {
-            return { mimeType: 'image/webp', base64: Buffer.from(u8).toString('base64') };
+            return { mimeType: 'image/webp', base64: buffer_1.Buffer.from(u8).toString('base64') };
         }
         // OLE header check (e.g. Northwind sample database has a 78-byte OLE header prepended before BMP/JPEG)
         if (u8.length > 78) {
             if (u8[78] === 0x42 && u8[79] === 0x4d) {
-                return { mimeType: 'image/bmp', base64: Buffer.from(u8.subarray(78)).toString('base64') };
+                return { mimeType: 'image/bmp', base64: buffer_1.Buffer.from(u8.subarray(78)).toString('base64') };
             }
             if (u8[78] === 0xff && u8[79] === 0xd8 && u8[80] === 0xff) {
-                return { mimeType: 'image/jpeg', base64: Buffer.from(u8.subarray(78)).toString('base64') };
+                return { mimeType: 'image/jpeg', base64: buffer_1.Buffer.from(u8.subarray(78)).toString('base64') };
             }
         }
-        return { mimeType: null, base64: Buffer.from(u8).toString('base64') };
+        return { mimeType: null, base64: buffer_1.Buffer.from(u8).toString('base64') };
     }
     getHtmlForWebview(webview) {
         const htmlPath = path.join(this.context.extensionPath, 'media', 'webview.html');

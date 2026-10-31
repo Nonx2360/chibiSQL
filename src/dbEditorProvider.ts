@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
+import { Buffer } from 'buffer';
 import initSqlJs, { Database } from 'sql.js';
 
 interface ColumnMeta {

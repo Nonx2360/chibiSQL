@@ -2,68 +2,325 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ChibiSQL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #1a1b26; color: #a9b1d6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body {
+            background-color: #1a1b26;
+            color: #a9b1d6;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+        }
         .pink-accent { color: #f7768e; }
         .cyan-accent { color: #7dcfff; }
-        .purple-card { background-color: #24283b; border-color: #414868; }
-        .glow-button { background: linear-gradient(135deg, #f7768e 0%, #bb9af7 100%); }
-        .glow-button:hover { opacity: 0.9; box-shadow: 0 0 12px rgba(247, 118, 142, 0.4); }
+        .purple-accent { color: #bb9af7; }
+        .yellow-accent { color: #e0af68; }
+        .green-accent { color: #9ece6a; }
+        .dark-card { background-color: #24283b; border-color: #3b4261; }
+        .dark-header { background-color: #1f2335; border-color: #3b4261; }
+        .table-cell { border-color: #2f354d; }
+        .glow-button {
+            background: linear-gradient(135deg, #f7768e 0%, #bb9af7 100%);
+            transition: all 0.2s ease;
+        }
+        .glow-button:hover {
+            opacity: 0.95;
+            box-shadow: 0 0 14px rgba(247, 118, 142, 0.45);
+        }
+        .btn-ghost {
+            background-color: #1f2335;
+            border: 1px solid #3b4261;
+            transition: all 0.15s ease;
+        }
+        .btn-ghost:hover {
+            background-color: #2e344f;
+            border-color: #7dcfff;
+            color: #7dcfff;
+        }
+        /* Custom scrollbars */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a1b26;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3b4261;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #7aa2f7;
+        }
+        .grid-header-sticky {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+        }
+        .grid-filter-sticky {
+            position: sticky;
+            top: 36px;
+            z-index: 19;
+        }
+        .col-index-sticky {
+            position: sticky;
+            left: 0;
+            z-index: 10;
+        }
+        .modal-backdrop {
+            background-color: rgba(15, 17, 26, 0.75);
+            backdrop-filter: blur(4px);
+        }
     </style>
 </head>
-<body class="h-screen flex flex-col p-4 select-none">
-    <!-- Header with Mascot Badge -->
-    <header class="flex items-center justify-between pb-3 border-b border-slate-700 mb-4">
-        <div class="flex items-center space-x-2">
-            <span class="text-2xl">⚡</span>
-            <h1 class="text-xl font-bold pink-accent">ChibiSQL <span class="text-xs text-purple-300 bg-purple-900/60 px-2 py-0.5 rounded-full">v0.1 Desu~</span></h1>
+<body class="h-screen flex flex-col p-3 select-none text-xs">
+
+    <!-- Top Navigation / Header -->
+    <header class="flex items-center justify-between pb-2.5 border-b border-slate-700/80 mb-3 flex-shrink-0">
+        <div class="flex items-center space-x-3">
+            <div class="flex items-center space-x-1.5 cursor-pointer" onclick="reloadDatabase()">
+                <span class="text-xl">⚡</span>
+                <h1 class="text-base font-bold pink-accent tracking-wide flex items-center gap-1.5">
+                    ChibiSQL <span class="text-[10px] text-purple-300 bg-purple-900/60 px-2 py-0.5 rounded-full border border-purple-500/30">v0.2 Desu~</span>
+                </h1>
+            </div>
+            <div id="statusBadge" class="text-[11px] px-3 py-1 rounded-full bg-slate-800/90 text-cyan-300 border border-cyan-500/30 font-medium">
+                (｡•̀ᴗ-)✧ Status: Ready
+            </div>
         </div>
-        <div id="statusBadge" class="text-xs px-3 py-1 rounded-full bg-slate-800 text-cyan-300 border border-cyan-500/30">
-            (｡•̀ᴗ-)✧ Status: Ready
+
+        <div class="flex items-center space-x-2">
+            <button onclick="toggleConsole()" id="btnToggleConsole" class="btn-ghost text-slate-300 px-3 py-1 rounded flex items-center space-x-1.5">
+                <span>⚡</span>
+                <span>SQL Console</span>
+            </button>
+            <button onclick="reloadDatabase()" title="Reload entire database" class="btn-ghost text-slate-300 px-2.5 py-1 rounded">
+                ⟳ Refresh DB
+            </button>
         </div>
     </header>
 
-    <!-- Main Workspace Layout -->
-    <div class="flex-1 flex space-x-4 overflow-hidden">
-        <!-- Sidebar: Tables -->
-        <aside class="w-1/4 purple-card border rounded-lg p-3 flex flex-col">
-            <h2 class="text-sm font-semibold cyan-accent mb-2 uppercase tracking-wider">Tables List</h2>
-            <div id="tableList" class="flex-1 overflow-y-auto space-y-1 text-sm">
-                <div class="text-xs text-slate-500 italic">Loading tables...</div>
+    <!-- Main Workspace Container -->
+    <div class="flex-1 flex space-x-3 overflow-hidden">
+
+        <!-- Left Sidebar: Tables List -->
+        <aside class="w-64 dark-card border rounded-lg flex flex-col overflow-hidden flex-shrink-0 shadow-lg">
+            <div class="p-2.5 dark-header border-b flex items-center justify-between">
+                <div class="flex items-center space-x-1.5">
+                    <span class="text-sm">📁</span>
+                    <span class="font-bold cyan-accent tracking-wider uppercase text-[11px]">Tables</span>
+                    <span id="tablesCountBadge" class="text-[10px] bg-cyan-900/40 text-cyan-300 px-1.5 py-0.2 rounded-full border border-cyan-700/40">0</span>
+                </div>
+                <button onclick="reloadDatabase()" title="Refresh tables" class="text-slate-400 hover:text-cyan-300 transition">⟳</button>
+            </div>
+
+            <!-- Table Search Input -->
+            <div class="p-2 border-b border-slate-700/50">
+                <div class="relative">
+                    <input id="tableSearchInput" oninput="filterTableList()" type="text" placeholder="Filter tables..." 
+                           class="w-full bg-slate-900/90 border border-slate-700 rounded px-2 py-1 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-400 text-[11px]" />
+                </div>
+            </div>
+
+            <!-- Scrollable Tables List -->
+            <div id="tableList" class="flex-1 overflow-y-auto p-1.5 space-y-1">
+                <div class="text-slate-500 italic p-2 text-center">Loading tables...</div>
             </div>
         </aside>
 
-        <!-- Main View: Grid & Query Console -->
-        <main class="flex-1 flex flex-col space-y-3 overflow-hidden">
-            <!-- Query Box -->
-            <div class="purple-card border rounded-lg p-3 flex flex-col space-y-2">
+        <!-- Right Side: Data Viewport & Optional Console -->
+        <main class="flex-1 flex flex-col space-y-2 overflow-hidden">
+
+            <!-- Collapsible SQL Console Drawer -->
+            <div id="queryConsolePanel" class="hidden dark-card border rounded-lg p-2.5 flex flex-col space-y-2 shadow-lg flex-shrink-0">
                 <div class="flex justify-between items-center">
-                    <span class="text-xs font-bold pink-accent uppercase">Console Query</span>
-                    <button onclick="runQuery()" class="glow-button text-slate-900 text-xs font-bold px-3 py-1 rounded shadow transition">Run Query (Ctrl+Enter)</button>
+                    <div class="flex items-center space-x-2">
+                        <span class="font-bold pink-accent uppercase tracking-wider text-[11px]">Console Query</span>
+                        <span id="queryStats" class="text-[10px] text-slate-400"></span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="runQuery()" class="glow-button text-slate-950 font-bold px-3 py-1 rounded shadow text-[11px]">
+                            Run Query (Ctrl+Enter)
+                        </button>
+                        <button onclick="toggleConsole()" class="text-slate-400 hover:text-pink-400 text-xs px-1.5 py-0.5">✕</button>
+                    </div>
                 </div>
-                <textarea id="queryInput" rows="2" class="w-full bg-slate-900/80 border border-slate-700 rounded p-2 text-xs font-mono text-cyan-200 focus:outline-none focus:border-pink-400" placeholder="SELECT * FROM table..."></textarea>
+                <textarea id="queryInput" rows="3" 
+                          class="w-full bg-slate-950/80 border border-slate-700 rounded p-2 font-mono text-cyan-200 focus:outline-none focus:border-pink-400 text-[11px]" 
+                          placeholder="SELECT * FROM table WHERE ..."></textarea>
             </div>
 
-            <!-- Data Table View -->
-            <div class="flex-1 purple-card border rounded-lg p-3 overflow-auto">
-                <div id="dataContainer" class="text-xs font-mono">
-                    <span class="text-slate-500">Select a table from the left sidebar to view contents.</span>
+            <!-- Table Explorer Container -->
+            <div class="flex-1 dark-card border rounded-lg flex flex-col overflow-hidden shadow-lg">
+
+                <!-- Table Explorer Header Bar -->
+                <div class="dark-header border-b px-3 py-2 flex items-center justify-between flex-shrink-0">
+                    <div class="flex items-center space-x-2.5">
+                        <button onclick="refreshActiveTable()" title="Refresh table data" class="btn-ghost text-slate-300 px-2 py-0.5 rounded text-[11px]">
+                            ⟳
+                        </button>
+                        <span class="text-base">🌸</span>
+                        <span id="activeTableName" class="font-bold text-slate-200 text-[13px]">Select a table</span>
+                        <span id="activeTableRowCountBadge" class="hidden bg-slate-800 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-full font-mono text-[10px]">
+                            Rows: 0
+                        </span>
+                    </div>
+
+                    <!-- Global Row Filter Input -->
+                    <div class="flex items-center space-x-2">
+                        <div class="relative w-64">
+                            <input id="globalFilterInput" oninput="onGlobalFilterChange()" type="text" 
+                                   placeholder="Filter rows..." 
+                                   class="w-full bg-slate-900/90 border border-slate-700 rounded px-2.5 py-1 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-pink-400 text-[11px]" />
+                            <span id="globalFilterClear" onclick="clearGlobalFilter()" class="hidden absolute right-2 top-1 text-slate-500 hover:text-pink-400 cursor-pointer font-bold">✕</span>
+                        </div>
+                    </div>
                 </div>
+
+                <!-- Grid Scrollable Viewport -->
+                <div id="gridScrollArea" class="flex-1 overflow-auto bg-[#1a1b26]/50">
+                    <div id="emptyPlaceholder" class="h-full flex flex-col items-center justify-center text-slate-500 space-y-2 p-8">
+                        <span class="text-4xl">🌸</span>
+                        <p class="text-sm font-medium">Select a table from the sidebar to inspect records</p>
+                        <p class="text-[11px] text-slate-600">Supports column filtering, sorting, pagination, and BLOB inspector</p>
+                    </div>
+
+                    <table id="dataTable" class="min-w-full text-left border-collapse hidden">
+                        <!-- Head: Col titles + PK/Types -->
+                        <thead class="grid-header-sticky bg-[#1f2335] text-slate-300 font-mono shadow">
+                            <tr id="headerRow"></tr>
+                        </thead>
+                        <!-- Head Row 2: Per-column filter inputs -->
+                        <thead class="grid-filter-sticky bg-[#1b1e2e] border-b border-slate-700/80">
+                            <tr id="filterRow"></tr>
+                        </thead>
+                        <!-- Body -->
+                        <tbody id="tableBody" class="font-mono divide-y divide-slate-800/60"></tbody>
+                    </table>
+                </div>
+
+                <!-- Bottom Pagination Bar -->
+                <div id="paginationBar" class="dark-header border-t px-3 py-1.5 flex items-center justify-between flex-shrink-0 text-[11px] font-mono text-slate-400">
+                    <!-- Page Steppers -->
+                    <div class="flex items-center space-x-1">
+                        <button onclick="goToPage(1)" id="btnPageFirst" title="First Page" class="btn-ghost px-2 py-0.5 rounded disabled:opacity-30">|◀</button>
+                        <button onclick="prevPage()" id="btnPagePrev" title="Previous Page" class="btn-ghost px-2 py-0.5 rounded disabled:opacity-30">◀</button>
+                        
+                        <div class="flex items-center space-x-1 px-1">
+                            <span>Page</span>
+                            <input id="pageInput" type="number" min="1" value="1" onchange="onPageInputChange(this.value)" 
+                                   class="w-12 bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-center text-pink-300 focus:outline-none focus:border-pink-400" />
+                            <span>of <span id="totalPagesLabel">1</span></span>
+                        </div>
+
+                        <button onclick="nextPage()" id="btnPageNext" title="Next Page" class="btn-ghost px-2 py-0.5 rounded disabled:opacity-30">▶</button>
+                        <button onclick="goToPage(state.totalPages)" id="btnPageLast" title="Last Page" class="btn-ghost px-2 py-0.5 rounded disabled:opacity-30">▶|</button>
+                    </div>
+
+                    <!-- Range Counter -->
+                    <div id="showingRangeText" class="text-slate-400 text-center">
+                        Showing 0 of 0 rows
+                    </div>
+
+                    <!-- Page Size Selector -->
+                    <div class="flex items-center space-x-1.5">
+                        <span>Rows per page:</span>
+                        <select id="pageSizeSelect" onchange="onPageSizeChange(this.value)" class="bg-slate-900 border border-slate-700 text-cyan-300 rounded px-1.5 py-0.5 focus:outline-none focus:border-cyan-400">
+                            <option value="25">25</option>
+                            <option value="50" selected>50</option>
+                            <option value="100">100</option>
+                            <option value="200">200</option>
+                        </select>
+                    </div>
+                </div>
+
             </div>
+
         </main>
+    </div>
+
+    <!-- Row Detail Modal / Inspector Popup -->
+    <div id="rowDetailModal" class="hidden fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4">
+        <div class="dark-card border border-slate-600 rounded-xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl overflow-hidden animate-fade-in">
+            <!-- Modal Header -->
+            <div class="dark-header border-b px-4 py-2.5 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <button onclick="stepModalRow(-1)" id="btnModalPrev" title="Previous record (↑)" class="btn-ghost px-2 py-1 rounded text-xs">↑</button>
+                    <button onclick="stepModalRow(1)" id="btnModalNext" title="Next record (↓)" class="btn-ghost px-2 py-1 rounded text-xs">↓</button>
+                    <span class="text-sm">🌸</span>
+                    <h3 id="modalTitle" class="font-bold cyan-accent text-sm">Table / 1</h3>
+                </div>
+                <button onclick="closeRowDetailModal()" class="text-slate-400 hover:text-pink-400 text-base font-bold px-2 py-0.5 transition">✕</button>
+            </div>
+
+            <!-- Modal Content (Fields List) -->
+            <div id="modalFieldsList" class="flex-1 overflow-y-auto p-4 space-y-3 bg-[#1a1b26]/70">
+                <!-- Dynamically injected fields -->
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="dark-header border-t px-4 py-2 flex justify-end space-x-2">
+                <button onclick="closeRowDetailModal()" class="btn-ghost px-4 py-1 rounded text-slate-300 hover:text-white">Close</button>
+            </div>
+        </div>
     </div>
 
     <script>
         const vscode = acquireVsCodeApi();
+
+        // Application State
+        const state = {
+            tables: [],
+            activeTable: null,
+            columns: [],
+            columnMeta: [], // [{ name, type, pk }]
+            rows: [],
+            page: 1,
+            pageSize: 50,
+            totalRows: 0,
+            totalPages: 1,
+            sortColumn: null,
+            sortDirection: 'ASC',
+            columnFilters: {},
+            globalFilter: '',
+            selectedRowIndex: -1,
+            filterDebounceTimer: null
+        };
+
+        // DOM Element Cache
         const statusBadge = document.getElementById('statusBadge');
         const tableList = document.getElementById('tableList');
-        const dataContainer = document.getElementById('dataContainer');
+        const tablesCountBadge = document.getElementById('tablesCountBadge');
+        const tableSearchInput = document.getElementById('tableSearchInput');
+        const activeTableName = document.getElementById('activeTableName');
+        const activeTableRowCountBadge = document.getElementById('activeTableRowCountBadge');
+        const globalFilterInput = document.getElementById('globalFilterInput');
+        const globalFilterClear = document.getElementById('globalFilterClear');
+        const dataTable = document.getElementById('dataTable');
+        const emptyPlaceholder = document.getElementById('emptyPlaceholder');
+        const headerRow = document.getElementById('headerRow');
+        const filterRow = document.getElementById('filterRow');
+        const tableBody = document.getElementById('tableBody');
+        const pageInput = document.getElementById('pageInput');
+        const totalPagesLabel = document.getElementById('totalPagesLabel');
+        const showingRangeText = document.getElementById('showingRangeText');
+        const pageSizeSelect = document.getElementById('pageSizeSelect');
+        const btnPageFirst = document.getElementById('btnPageFirst');
+        const btnPagePrev = document.getElementById('btnPagePrev');
+        const btnPageNext = document.getElementById('btnPageNext');
+        const btnPageLast = document.getElementById('btnPageLast');
+        const queryConsolePanel = document.getElementById('queryConsolePanel');
         const queryInput = document.getElementById('queryInput');
+        const queryStats = document.getElementById('queryStats');
+        const rowDetailModal = document.getElementById('rowDetailModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalFieldsList = document.getElementById('modalFieldsList');
 
+        // Initial Load
         vscode.postMessage({ type: 'GET_TABLES' });
 
+        // Keyboard Shortcuts
         queryInput.addEventListener('keydown', (e) => {
             if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
                 e.preventDefault();
@@ -71,66 +328,566 @@
             }
         });
 
-        window.addEventListener('message', event => {
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !rowDetailModal.classList.contains('hidden')) {
+                closeRowDetailModal();
+            }
+        });
+
+        // Communication Listener
+        window.addEventListener('message', (event) => {
             const msg = event.data;
             switch (msg.type) {
                 case 'SET_TABLES':
-                    tableList.innerHTML = '';
-                    if (msg.tables.length === 0) {
-                        tableList.innerHTML = '<div class="text-xs text-slate-500">No tables found.</div>';
-                    }
-                    msg.tables.forEach(table => {
-                        const btn = document.createElement('button');
-                        btn.className = 'w-full text-left px-2 py-1.5 rounded hover:bg-purple-800/40 text-slate-200 transition font-mono text-xs';
-                        btn.innerText = '🌸 ' + table;
-                        btn.onclick = () => {
-                            statusBadge.innerText = '(⁠*⁠_⁠*⁠) Fetching: ' + table;
-                            vscode.postMessage({ type: 'SELECT_TABLE', table });
-                        };
-                        tableList.appendChild(btn);
-                    });
+                    state.tables = msg.tables || [];
+                    renderTablesSidebar();
                     statusBadge.innerText = '(｡•̀ᴗ-)✧ Status: Ready';
+                    if (state.tables.length > 0 && !state.activeTable) {
+                        selectTable(state.tables[0].name);
+                    }
                     break;
 
                 case 'SET_TABLE_DATA':
+                    state.activeTable = msg.table;
+                    state.columns = msg.columns || [];
+                    state.columnMeta = msg.columnMeta || [];
+                    state.rows = msg.rows || [];
+                    state.page = msg.page || 1;
+                    state.pageSize = msg.pageSize || 50;
+                    state.totalRows = msg.totalRows || 0;
+                    state.totalPages = msg.totalPages || 1;
+                    state.sortColumn = msg.sortColumn || null;
+                    state.sortDirection = msg.sortDirection || 'ASC';
+
+                    renderGrid();
+                    updatePaginationUI();
+                    statusBadge.innerText = `(๑˃̵ᴗ˂̵) ${state.activeTable} Loaded!`;
+                    break;
+
                 case 'QUERY_RESULT':
-                    statusBadge.innerText = '(๑˃̵ᴗ˂̵) Data Loaded!';
-                    renderGrid(msg.columns, msg.rows);
+                    statusBadge.innerText = '(๑˃̵ᴗ˂̵) Query Completed!';
+                    state.activeTable = '(Console Query)';
+                    state.columns = msg.columns || [];
+                    state.columnMeta = state.columns.map(c => ({ name: c, type: 'TEXT', pk: 0 }));
+                    state.rows = msg.rows || [];
+                    state.page = 1;
+                    state.totalRows = state.rows.length;
+                    state.totalPages = 1;
+                    queryStats.innerText = `${msg.duration || 0}ms • ${state.rows.length} rows returned`;
+
+                    renderGrid();
+                    updatePaginationUI();
                     break;
 
                 case 'ERROR':
                     statusBadge.innerText = '(>_<) Query Error!';
-                    dataContainer.innerHTML = `<div class="p-3 bg-red-900/30 border border-red-500/50 rounded text-red-300">Error: ${msg.message}</div>`;
+                    showErrorNotification(msg.message);
                     break;
             }
         });
 
-        function renderGrid(columns, rows) {
-            if (!columns || columns.length === 0) {
-                dataContainer.innerHTML = '<div class="text-slate-400">Query executed successfully. (No output returned)</div>';
+        function reloadDatabase() {
+            statusBadge.innerText = '(⁠*⁠_⁠*⁠) Reloading Database...';
+            vscode.postMessage({ type: 'RELOAD_DATABASE' });
+        }
+
+        function refreshActiveTable() {
+            if (!state.activeTable || state.activeTable === '(Console Query)') {
+                reloadDatabase();
                 return;
             }
-            let html = '<table class="min-w-full text-left border-collapse"><thead><tr>';
-            columns.forEach(col => {
-                html += `<th class="border-b border-slate-700 p-2 text-pink-300 font-bold bg-slate-900/40">${col}</th>`;
+            fetchCurrentTableData();
+        }
+
+        function fetchCurrentTableData() {
+            if (!state.activeTable || state.activeTable === '(Console Query)') return;
+            statusBadge.innerText = `(⁠*⁠_⁠*⁠) Fetching: ${state.activeTable}...`;
+            vscode.postMessage({
+                type: 'SELECT_TABLE',
+                table: state.activeTable,
+                page: state.page,
+                pageSize: state.pageSize,
+                sortColumn: state.sortColumn,
+                sortDirection: state.sortDirection,
+                columnFilters: state.columnFilters,
+                globalFilter: state.globalFilter
             });
-            html += '</tr></thead><tbody>';
-            rows.forEach(row => {
-                html += '<tr class="border-b border-slate-800/60 hover:bg-slate-800/30">';
-                row.forEach(val => {
-                    html += `<td class="p-2 text-slate-300">${val !== null ? val : '<i class="text-slate-600">null</i>'}</td>`;
-                });
-                html += '</tr>';
+        }
+
+        function selectTable(tableName) {
+            state.activeTable = tableName;
+            state.page = 1;
+            state.sortColumn = null;
+            state.sortDirection = 'ASC';
+            state.columnFilters = {};
+            state.globalFilter = '';
+            globalFilterInput.value = '';
+            globalFilterClear.classList.add('hidden');
+
+            renderTablesSidebar();
+            fetchCurrentTableData();
+        }
+
+        function renderTablesSidebar() {
+            tablesCountBadge.innerText = state.tables.length;
+            const filterText = (tableSearchInput.value || '').toLowerCase().trim();
+            tableList.innerHTML = '';
+
+            const filtered = state.tables.filter(t => t.name.toLowerCase().includes(filterText));
+
+            if (filtered.length === 0) {
+                tableList.innerHTML = '<div class="text-[11px] text-slate-500 italic p-3 text-center">No matching tables found.</div>';
+                return;
+            }
+
+            filtered.forEach(table => {
+                const btn = document.createElement('button');
+                const isActive = table.name === state.activeTable;
+                btn.className = `w-full text-left px-2.5 py-1.5 rounded flex items-center justify-between font-mono text-xs transition ${
+                    isActive 
+                        ? 'bg-purple-900/60 border border-pink-500/50 text-pink-300 font-semibold shadow-inner' 
+                        : 'text-slate-300 hover:bg-slate-800/60 hover:text-cyan-300'
+                }`;
+
+                btn.innerHTML = `
+                    <span class="truncate flex items-center space-x-1.5">
+                        <span class="text-xs">🌸</span>
+                        <span title="${table.name}">${table.name}</span>
+                    </span>
+                    <span class="text-[10px] text-slate-400 bg-slate-900/80 px-1.5 py-0.2 rounded-full border border-slate-700/50">
+                        ${table.rowCount.toLocaleString()}
+                    </span>
+                `;
+
+                btn.onclick = () => selectTable(table.name);
+                tableList.appendChild(btn);
             });
-            html += '</tbody></table>';
-            dataContainer.innerHTML = html;
+        }
+
+        function filterTableList() {
+            renderTablesSidebar();
+        }
+
+        function toggleConsole() {
+            const isHidden = queryConsolePanel.classList.contains('hidden');
+            if (isHidden) {
+                queryConsolePanel.classList.remove('hidden');
+                queryInput.focus();
+            } else {
+                queryConsolePanel.classList.add('hidden');
+            }
         }
 
         function runQuery() {
-            const query = queryInput.value;
-            if (!query.trim()) return;
-            statusBadge.innerText = '(⁠*⁠_⁠*⁠) Running Query...';
+            const query = queryInput.value.trim();
+            if (!query) return;
+            statusBadge.innerText = '(ง •̀_•́)ง Querying...';
             vscode.postMessage({ type: 'EXECUTE_QUERY', query });
+        }
+
+        function onGlobalFilterChange() {
+            state.globalFilter = globalFilterInput.value.trim();
+            if (state.globalFilter) {
+                globalFilterClear.classList.remove('hidden');
+            } else {
+                globalFilterClear.classList.add('hidden');
+            }
+
+            debounceFetch(() => {
+                state.page = 1;
+                fetchCurrentTableData();
+            });
+        }
+
+        function clearGlobalFilter() {
+            globalFilterInput.value = '';
+            state.globalFilter = '';
+            globalFilterClear.classList.add('hidden');
+            state.page = 1;
+            fetchCurrentTableData();
+        }
+
+        function debounceFetch(fn, delay = 300) {
+            clearTimeout(state.filterDebounceTimer);
+            state.filterDebounceTimer = setTimeout(fn, delay);
+        }
+
+        function getColumnMeta(colName) {
+            return state.columnMeta.find(c => c.name === colName) || { name: colName, type: 'TEXT', pk: 0 };
+        }
+
+        function getTypeIcon(type, isPk) {
+            if (isPk) return '<span title="Primary Key" class="text-yellow-400 font-bold">🔑</span>';
+            const upper = (type || '').toUpperCase();
+            if (upper.includes('INT') || upper.includes('NUM') || upper.includes('REAL') || upper.includes('DECIMAL')) {
+                return '<span title="Numeric" class="text-cyan-400 font-bold">#</span>';
+            }
+            if (upper.includes('BLOB') || upper.includes('BINARY')) {
+                return '<span title="Binary BLOB" class="text-purple-400">📦</span>';
+            }
+            if (upper.includes('DATE') || upper.includes('TIME')) {
+                return '<span title="Date/Time" class="text-yellow-300">📅</span>';
+            }
+            return '<span title="Text" class="text-emerald-400">🗎</span>';
+        }
+
+        function renderGrid() {
+            if (!state.columns || state.columns.length === 0) {
+                dataTable.classList.add('hidden');
+                emptyPlaceholder.classList.remove('hidden');
+                activeTableName.innerText = state.activeTable || 'Select a table';
+                activeTableRowCountBadge.classList.add('hidden');
+                return;
+            }
+
+            dataTable.classList.remove('hidden');
+            emptyPlaceholder.classList.add('hidden');
+            activeTableName.innerText = state.activeTable;
+            activeTableRowCountBadge.classList.remove('hidden');
+            activeTableRowCountBadge.innerText = `Rows: ${state.totalRows.toLocaleString()}`;
+
+            // Render Header Row 1 (Titles & Type Icons & Sort)
+            headerRow.innerHTML = '';
+            
+            // # index column header
+            const thIndex = document.createElement('th');
+            thIndex.className = 'p-2 text-center text-slate-500 font-bold bg-[#1f2335] border-b border-r border-slate-700/80 col-index-sticky left-0 w-12';
+            thIndex.innerText = '#';
+            headerRow.appendChild(thIndex);
+
+            state.columns.forEach(col => {
+                const meta = getColumnMeta(col);
+                const th = document.createElement('th');
+                th.className = 'p-2 border-b border-r border-slate-700/80 text-pink-300 font-semibold cursor-pointer select-none hover:bg-slate-800/50 transition';
+                
+                const isSorted = state.sortColumn === col;
+                const sortIcon = isSorted ? (state.sortDirection === 'ASC' ? '▲' : '▼') : '⇅';
+                const sortClass = isSorted ? 'text-cyan-300' : 'text-slate-500';
+
+                th.innerHTML = `
+                    <div class="flex items-center justify-between space-x-2">
+                        <span class="flex items-center space-x-1.5 truncate">
+                            <span>${getTypeIcon(meta.type, meta.pk > 0)}</span>
+                            <span class="truncate" title="${col} (${meta.type || 'TEXT'})">${col}</span>
+                        </span>
+                        <span class="text-[10px] ${sortClass}">${sortIcon}</span>
+                    </div>
+                `;
+
+                th.onclick = () => onSortColumn(col);
+                headerRow.appendChild(th);
+            });
+
+            // Render Header Row 2 (Inline Column Filters)
+            filterRow.innerHTML = '';
+            const thFilterBlank = document.createElement('th');
+            thFilterBlank.className = 'p-1 bg-[#1b1e2e] border-r border-slate-700/80 text-center col-index-sticky left-0';
+            thFilterBlank.innerHTML = `
+                <button onclick="clearAllColumnFilters()" title="Clear column filters" class="text-[10px] text-slate-500 hover:text-pink-400">✕</button>
+            `;
+            filterRow.appendChild(thFilterBlank);
+
+            state.columns.forEach(col => {
+                const th = document.createElement('th');
+                th.className = 'p-1 bg-[#1b1e2e] border-r border-slate-700/80';
+                
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.placeholder = `Filter col...`;
+                input.value = state.columnFilters[col] || '';
+                input.className = 'w-full bg-slate-900/90 border border-slate-700/80 rounded px-1.5 py-0.5 text-[10px] text-slate-200 placeholder-slate-600 focus:outline-none focus:border-cyan-400 font-normal';
+                
+                input.oninput = (e) => {
+                    const val = e.target.value;
+                    if (val) {
+                        state.columnFilters[col] = val;
+                    } else {
+                        delete state.columnFilters[col];
+                    }
+                    debounceFetch(() => {
+                        state.page = 1;
+                        fetchCurrentTableData();
+                    });
+                };
+
+                th.appendChild(input);
+                filterRow.appendChild(th);
+            });
+
+            // Render Body Rows
+            tableBody.innerHTML = '';
+            if (state.rows.length === 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td colspan="${state.columns.length + 1}" class="p-8 text-center text-slate-500 italic">
+                        (つ﹏<) No records found matching the filter criteria.
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+                return;
+            }
+
+            const rowOffset = (state.page - 1) * state.pageSize;
+
+            state.rows.forEach((row, rIdx) => {
+                const tr = document.createElement('tr');
+                tr.className = 'border-b border-slate-800/80 hover:bg-purple-900/20 cursor-pointer transition';
+
+                // Row index number cell
+                const tdIndex = document.createElement('td');
+                tdIndex.className = 'p-1.5 text-center text-slate-500 font-bold bg-[#1a1b26] border-r border-slate-800 col-index-sticky left-0';
+                tdIndex.innerText = (rowOffset + rIdx + 1).toLocaleString();
+                tr.appendChild(tdIndex);
+
+                // Data cells
+                row.forEach((val, cIdx) => {
+                    const td = document.createElement('td');
+                    td.className = 'p-1.5 border-r border-slate-800/80 text-slate-300 max-w-xs truncate';
+
+                    if (val === null) {
+                        td.innerHTML = '<i class="text-slate-600">null</i>';
+                    } else if (typeof val === 'object' && val.__isBlob) {
+                        if (val.mimeType && val.mimeType.startsWith('image/')) {
+                            td.innerHTML = `
+                                <div class="flex items-center space-x-1.5">
+                                    <img src="data:${val.mimeType};base64,${val.base64}" class="w-7 h-7 object-cover rounded border border-purple-500/40 shadow-sm" />
+                                    <span class="text-[10px] text-purple-300 bg-purple-950/60 px-1 py-0.2 rounded border border-purple-700/50">${formatBytes(val.size)}</span>
+                                </div>
+                            `;
+                        } else {
+                            td.innerHTML = `<span class="text-[10px] text-cyan-300 bg-slate-900 px-1.5 py-0.5 rounded border border-cyan-800/50">📦 BLOB (${formatBytes(val.size)})</span>`;
+                        }
+                    } else {
+                        td.innerText = String(val);
+                        td.title = String(val);
+                    }
+
+                    tr.appendChild(td);
+                });
+
+                // Row click opens the Detail Modal
+                tr.onclick = () => openRowDetailModal(rIdx);
+                tableBody.appendChild(tr);
+            });
+        }
+
+        function onSortColumn(col) {
+            if (state.sortColumn === col) {
+                if (state.sortDirection === 'ASC') {
+                    state.sortDirection = 'DESC';
+                } else {
+                    state.sortColumn = null;
+                    state.sortDirection = 'ASC';
+                }
+            } else {
+                state.sortColumn = col;
+                state.sortDirection = 'ASC';
+            }
+            state.page = 1;
+            fetchCurrentTableData();
+        }
+
+        function clearAllColumnFilters() {
+            state.columnFilters = {};
+            state.page = 1;
+            fetchCurrentTableData();
+        }
+
+        function updatePaginationUI() {
+            pageInput.value = state.page;
+            pageInput.max = state.totalPages;
+            totalPagesLabel.innerText = state.totalPages.toLocaleString();
+            pageSizeSelect.value = String(state.pageSize);
+
+            const start = state.totalRows === 0 ? 0 : (state.page - 1) * state.pageSize + 1;
+            const end = Math.min(state.totalRows, state.page * state.pageSize);
+            showingRangeText.innerText = `Showing ${start.toLocaleString()} - ${end.toLocaleString()} of ${state.totalRows.toLocaleString()} rows`;
+
+            btnPageFirst.disabled = state.page <= 1;
+            btnPagePrev.disabled = state.page <= 1;
+            btnPageNext.disabled = state.page >= state.totalPages;
+            btnPageLast.disabled = state.page >= state.totalPages;
+        }
+
+        function goToPage(page) {
+            const target = Math.max(1, Math.min(state.totalPages, Number(page) || 1));
+            if (target === state.page) return;
+            state.page = target;
+            fetchCurrentTableData();
+        }
+
+        function prevPage() {
+            if (state.page > 1) goToPage(state.page - 1);
+        }
+
+        function nextPage() {
+            if (state.page < state.totalPages) goToPage(state.page + 1);
+        }
+
+        function onPageInputChange(val) {
+            goToPage(val);
+        }
+
+        function onPageSizeChange(val) {
+            state.pageSize = Number(val) || 50;
+            state.page = 1;
+            fetchCurrentTableData();
+        }
+
+        // Row Detail Modal / Inspector Popup
+        function openRowDetailModal(index) {
+            state.selectedRowIndex = index;
+            renderModalContent();
+            rowDetailModal.classList.remove('hidden');
+        }
+
+        function closeRowDetailModal() {
+            rowDetailModal.classList.add('hidden');
+            state.selectedRowIndex = -1;
+        }
+
+        function stepModalRow(delta) {
+            const nextIdx = state.selectedRowIndex + delta;
+            if (nextIdx >= 0 && nextIdx < state.rows.length) {
+                state.selectedRowIndex = nextIdx;
+                renderModalContent();
+            }
+        }
+
+        function renderModalContent() {
+            const row = state.rows[state.selectedRowIndex];
+            if (!row) return;
+
+            const globalRowNumber = (state.page - 1) * state.pageSize + state.selectedRowIndex + 1;
+            modalTitle.innerText = `${state.activeTable} / Row ${globalRowNumber}`;
+
+            document.getElementById('btnModalPrev').disabled = state.selectedRowIndex <= 0;
+            document.getElementById('btnModalNext').disabled = state.selectedRowIndex >= state.rows.length - 1;
+
+            modalFieldsList.innerHTML = '';
+
+            state.columns.forEach((col, cIdx) => {
+                const meta = getColumnMeta(col);
+                const val = row[cIdx];
+                const fieldCard = document.createElement('div');
+                fieldCard.className = 'dark-card border rounded-lg p-3 space-y-1.5';
+
+                const header = document.createElement('div');
+                header.className = 'flex items-center justify-between text-[11px]';
+                
+                const leftLabel = `
+                    <span class="flex items-center space-x-1.5 font-bold pink-accent">
+                        ${getTypeIcon(meta.type, meta.pk > 0)}
+                        <span>${col}</span>
+                    </span>
+                `;
+
+                const rightBadge = `
+                    <span class="text-[10px] text-cyan-300 bg-slate-900 px-2 py-0.5 rounded border border-cyan-800/50 uppercase font-mono">
+                        ${meta.pk > 0 ? 'PK • ' : ''}${meta.type || 'TEXT'}
+                    </span>
+                `;
+
+                header.innerHTML = leftLabel + rightBadge;
+                fieldCard.appendChild(header);
+
+                // Content render
+                if (val === null) {
+                    const nullDiv = document.createElement('div');
+                    nullDiv.className = 'text-slate-500 italic bg-slate-900/60 p-2 rounded border border-slate-800 text-xs';
+                    nullDiv.innerText = 'null';
+                    fieldCard.appendChild(nullDiv);
+                } else if (typeof val === 'object' && val.__isBlob) {
+                    const blobDiv = document.createElement('div');
+                    blobDiv.className = 'space-y-2 bg-slate-950/70 p-3 rounded border border-slate-800';
+
+                    let previewHtml = '';
+                    if (val.mimeType && val.mimeType.startsWith('image/')) {
+                        previewHtml = `
+                            <div class="flex justify-center p-2 bg-slate-900/80 rounded border border-slate-800">
+                                <img src="data:${val.mimeType};base64,${val.base64}" class="max-h-52 object-contain rounded shadow" />
+                            </div>
+                        `;
+                    }
+
+                    blobDiv.innerHTML = `
+                        ${previewHtml}
+                        <div class="flex items-center justify-between pt-1">
+                            <span class="text-[11px] text-slate-400 font-mono">Size: ${formatBytes(val.size)} (${val.mimeType || 'binary'})</span>
+                            <button onclick="downloadBlob('${col}', ${state.selectedRowIndex})" class="btn-ghost text-cyan-300 text-xs px-3 py-1 rounded flex items-center space-x-1">
+                                <span>⬇</span>
+                                <span>Download BLOB</span>
+                            </button>
+                        </div>
+                    `;
+                    fieldCard.appendChild(blobDiv);
+                } else {
+                    const strVal = String(val);
+                    const isLong = strVal.length > 80 || strVal.includes('\n');
+                    
+                    if (isLong) {
+                        const textarea = document.createElement('textarea');
+                        textarea.readOnly = true;
+                        textarea.rows = Math.min(6, Math.max(2, strVal.split('\n').length));
+                        textarea.value = strVal;
+                        textarea.className = 'w-full bg-slate-900/90 border border-slate-700/80 rounded p-2 text-xs font-mono text-slate-200 focus:outline-none focus:border-cyan-400';
+                        fieldCard.appendChild(textarea);
+                    } else {
+                        const input = document.createElement('input');
+                        input.type = 'text';
+                        input.readOnly = true;
+                        input.value = strVal;
+                        input.className = 'w-full bg-slate-900/90 border border-slate-700/80 rounded px-2.5 py-1 text-xs font-mono text-slate-200 focus:outline-none focus:border-cyan-400';
+                        fieldCard.appendChild(input);
+                    }
+                }
+
+                modalFieldsList.appendChild(fieldCard);
+            });
+        }
+
+        function downloadBlob(colName, rowIndex) {
+            const row = state.rows[rowIndex];
+            const cIdx = state.columns.indexOf(colName);
+            if (!row || cIdx === -1) return;
+            const blobObj = row[cIdx];
+            if (!blobObj || !blobObj.__isBlob) return;
+
+            let ext = 'bin';
+            if (blobObj.mimeType === 'image/png') ext = 'png';
+            else if (blobObj.mimeType === 'image/jpeg') ext = 'jpg';
+            else if (blobObj.mimeType === 'image/gif') ext = 'gif';
+            else if (blobObj.mimeType === 'image/bmp') ext = 'bmp';
+            else if (blobObj.mimeType === 'image/webp') ext = 'webp';
+
+            const filename = `${state.activeTable}_${colName}_row${rowIndex + 1}.${ext}`;
+            vscode.postMessage({
+                type: 'DOWNLOAD_BLOB',
+                filename,
+                base64: blobObj.base64
+            });
+        }
+
+        function showErrorNotification(message) {
+            const banner = document.createElement('div');
+            banner.className = 'fixed bottom-4 right-4 z-50 bg-red-950/90 border border-red-500/80 text-red-200 px-4 py-2.5 rounded-lg shadow-xl text-xs flex items-center space-x-2 animate-bounce';
+            banner.innerHTML = `
+                <span>(>_<)</span>
+                <span>Error: ${message}</span>
+                <button onclick="this.parentElement.remove()" class="text-red-400 font-bold ml-2">✕</button>
+            `;
+            document.body.appendChild(banner);
+            setTimeout(() => {
+                if (banner.parentElement) banner.remove();
+            }, 6000);
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
     </script>
 </body>

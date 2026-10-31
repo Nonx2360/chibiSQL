@@ -6,4 +6,6 @@ PLAN.md
 **/*.map
 *.vsix
 example.db
+*.gif
+frames/**
 /node_modules/**

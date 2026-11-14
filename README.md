@@ -1,6 +1,6 @@
 <div align="center">
 
-  <img src="https://raw.githubusercontent.com/Nonx2360/chibiSQL/main/media/logo.png" width="180" height="180" alt="ChibiSQL Mascot Logo" style="border-radius: 28px; box-shadow: 0 10px 30px rgba(247, 118, 142, 0.35);" />
+  <img src="https://nonx2360.github.io/chibiSQL/logo.png" width="180" height="180" alt="ChibiSQL Mascot Logo" style="border-radius: 28px; box-shadow: 0 10px 30px rgba(247, 118, 142, 0.35);" />
 
   # ChibiSQL 🌸⚡
   ### The Anime-Themed SQLite Database Editor & Viewer for VS Code & Cursor
@@ -64,6 +64,9 @@ Whenever you open a `.db`, `.sqlite`, or `.sqlite3` file, ChibiSQL automatically
 - 💻 **Integrated SQL Query Console:**
   - Collapsible terminal drawer to run custom `SELECT`, `JOIN`, or aggregate queries with <kbd>Ctrl</kbd>+<kbd>Enter</kbd>.
   - Tracks query execution time in milliseconds (`⚡ 8ms`).
+- 💾 **Real-Time Data Persistence:**
+  - Automatically writes data and schema modifications (`DELETE`, `UPDATE`, `INSERT`, `CREATE`, `DROP`, `ALTER`) directly back to the database file on disk.
+  - Dedicated **Save** button and <kbd>Ctrl</kbd>+<kbd>S</kbd> / <kbd>Cmd</kbd>+<kbd>S</kbd> shortcut support.
 
 ---
 

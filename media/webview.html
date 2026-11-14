@@ -167,7 +167,7 @@
                 <div class="flex flex-col">
                     <div class="flex items-center gap-2">
                         <span class="text-sm font-bold tracking-wide text-[#f7768e]">ChibiSQL</span>
-                        <span class="text-[10px] font-semibold text-[#bb9af7] bg-[#bb9af7]/10 px-2 py-0.5 rounded-full border border-[#bb9af7]/30">v0.2 Desu~</span>
+                        <span class="text-[10px] font-semibold text-[#bb9af7] bg-[#bb9af7]/10 px-2 py-0.5 rounded-full border border-[#bb9af7]/30">v0.0.2 Desu~</span>
                     </div>
                     <span class="text-[10px] text-[#565f89] font-mono-code leading-none">Anime SQLite Studio</span>
                 </div>
@@ -188,6 +188,15 @@
                     <line x1="12" y1="19" x2="20" y2="19"></line>
                 </svg>
                 <span>Console</span>
+            </button>
+
+            <button onclick="saveDatabase()" id="btnSaveDb" title="Save Database to disk (Ctrl+S)" class="btn-toolbar px-3 py-1.5 rounded-md flex items-center space-x-1.5 font-medium cursor-pointer">
+                <svg class="w-3.5 h-3.5 text-[#9ece6a]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                <span>Save</span>
             </button>
 
             <button onclick="reloadDatabase()" title="Reload Database from disk" class="btn-toolbar px-3 py-1.5 rounded-md flex items-center space-x-1.5 font-medium cursor-pointer">
@@ -504,7 +513,10 @@
         });
 
         window.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && !rowDetailModal.classList.contains('hidden')) {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+                e.preventDefault();
+                saveDatabase();
+            } else if (e.key === 'Escape' && !rowDetailModal.classList.contains('hidden')) {
                 closeRowDetailModal();
             } else if (!rowDetailModal.classList.contains('hidden')) {
                 if (e.key === 'ArrowUp') {
@@ -548,18 +560,37 @@
                     break;
 
                 case 'QUERY_RESULT':
-                    setStatus('(๑˃̵ᴗ˂̵) Query Completed!');
-                    state.activeTable = '(Console Query)';
-                    state.columns = msg.columns || [];
-                    state.columnMeta = state.columns.map(c => ({ name: c, type: 'TEXT', pk: 0 }));
-                    state.rows = msg.rows || [];
-                    state.page = 1;
-                    state.totalRows = state.rows.length;
-                    state.totalPages = 1;
-                    queryStats.innerText = `${msg.duration || 0}ms • ${state.rows.length} rows returned`;
+                    if (msg.columns && msg.columns.length > 0) {
+                        setStatus('(๑˃̵ᴗ˂̵) Query Completed!');
+                        state.activeTable = '(Console Query)';
+                        state.columns = msg.columns || [];
+                        state.columnMeta = state.columns.map(c => ({ name: c, type: 'TEXT', pk: 0 }));
+                        state.rows = msg.rows || [];
+                        state.page = 1;
+                        state.totalRows = state.rows.length;
+                        state.totalPages = 1;
+                        queryStats.innerText = `${msg.duration || 0}ms • ${state.rows.length} rows returned`;
 
-                    renderGrid();
-                    updatePaginationUI();
+                        renderGrid();
+                        updatePaginationUI();
+                        showToast(`Returned ${state.rows.length} row(s)`, 'info');
+                    } else {
+                        const affected = msg.rowsModified ?? 0;
+                        setStatus('(๑˃̵ᴗ˂̵) Saved to disk!');
+                        const affectedText = affected > 0 ? `${affected.toLocaleString()} row(s) affected • ` : '';
+                        queryStats.innerText = `${msg.duration || 0}ms • ${affectedText}Saved to disk`;
+                        showToast(msg.message || (affected > 0 ? `${affected.toLocaleString()} row(s) affected and saved to disk!` : 'Query executed and saved to disk!'), 'success');
+
+                        // Automatically refresh the active table data if viewing one!
+                        if (state.activeTable && state.activeTable !== '(Console Query)') {
+                            fetchCurrentTableData();
+                        }
+                    }
+                    break;
+
+                case 'SAVED_SUCCESS':
+                    setStatus('(๑˃̵ᴗ˂̵) Saved to disk!');
+                    showToast(msg.message || 'Database saved to disk successfully!', 'success');
                     break;
 
                 case 'ERROR':
@@ -571,6 +602,11 @@
 
         function setStatus(text) {
             statusText.innerText = text;
+        }
+
+        function saveDatabase() {
+            setStatus('(⁠*⁠_⁠*⁠) Saving Database to disk...');
+            vscode.postMessage({ type: 'SAVE_DATABASE' });
         }
 
         function reloadDatabase() {

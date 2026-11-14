@@ -228,6 +228,22 @@ class DbEditorProvider {
                             return;
                         const startTime = Date.now();
                         const res = db.exec(message.query);
+                        const rowsModified = db.getRowsModified();
+                        const isMutation = rowsModified > 0 || /\b(INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|REPLACE|VACUUM|PRAGMA\s+[a-zA-Z0-9_]+\s*=)\b/i.test(message.query);
+                        if (isMutation) {
+                            try {
+                                const exportedData = db.export();
+                                await vscode.workspace.fs.writeFile(document.uri, exportedData);
+                            }
+                            catch (saveErr) {
+                                vscode.window.showErrorMessage(`ChibiSQL Error: Failed to save changes to disk: ${saveErr.message}`);
+                            }
+                            try {
+                                const tables = getTableList();
+                                webviewPanel.webview.postMessage({ type: 'SET_TABLES', tables });
+                            }
+                            catch { }
+                        }
                         const duration = Date.now() - startTime;
                         if (res.length === 0) {
                             webviewPanel.webview.postMessage({
@@ -235,7 +251,11 @@ class DbEditorProvider {
                                 columns: [],
                                 rows: [],
                                 duration,
-                                message: 'Query executed successfully. (No result set returned)'
+                                rowsModified,
+                                isMutation,
+                                message: rowsModified > 0
+                                    ? `Query executed: ${rowsModified.toLocaleString()} row(s) affected and saved to disk.`
+                                    : (isMutation ? 'Query executed and saved to disk successfully.' : 'Query executed successfully. (No result set returned)')
                             });
                         }
                         else {
@@ -246,12 +266,36 @@ class DbEditorProvider {
                                 columns,
                                 rows: formattedRows,
                                 duration,
+                                rowsModified,
+                                isMutation,
                                 rowCount: formattedRows.length
                             });
                         }
                     }
                     catch (err) {
                         webviewPanel.webview.postMessage({ type: 'ERROR', message: err.message });
+                    }
+                    break;
+                }
+                case 'SAVE_DATABASE': {
+                    try {
+                        if (!db)
+                            return;
+                        const exportedData = db.export();
+                        await vscode.workspace.fs.writeFile(document.uri, exportedData);
+                        try {
+                            const tables = getTableList();
+                            webviewPanel.webview.postMessage({ type: 'SET_TABLES', tables });
+                        }
+                        catch { }
+                        webviewPanel.webview.postMessage({
+                            type: 'SAVED_SUCCESS',
+                            message: 'Database saved to disk successfully!'
+                        });
+                        vscode.window.showInformationMessage('ChibiSQL: Database saved to disk successfully!');
+                    }
+                    catch (err) {
+                        webviewPanel.webview.postMessage({ type: 'ERROR', message: `Failed to save: ${err.message}` });
                     }
                     break;
                 }
@@ -327,9 +371,11 @@ class DbEditorProvider {
     }
     getHtmlForWebview(webview) {
         const htmlPath = path.join(this.context.extensionPath, 'media', 'webview.html');
-        const logoUri = webview.asWebviewUri(vscode.Uri.file(path.join(this.context.extensionPath, 'media', 'logo.png')));
+        const logoUri = 'https://nonx2360.github.io/chibiSQL/logo.png';
+        const localLogoUri = webview.asWebviewUri(vscode.Uri.file(path.join(this.context.extensionPath, 'media', 'logo.png')));
         let html = fs.readFileSync(htmlPath, 'utf8');
-        return html.replace(/{{LOGO_URI}}/g, logoUri.toString());
+        html = html.replace(/{{LOGO_URI}}/g, logoUri);
+        return html.replace(/{{LOCAL_LOGO_URI}}/g, localLogoUri.toString());
     }
 }
 exports.DbEditorProvider = DbEditorProvider;

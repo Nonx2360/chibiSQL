@@ -6,8 +6,13 @@ PLAN.md
 **/*.map
 *.vsix
 example.db
+test.db
+*.db
 *.gif
 frames/**
 .agent/**
+.github/**
+docs/**
+brag-output/**
 /logo.png
 /node_modules/**

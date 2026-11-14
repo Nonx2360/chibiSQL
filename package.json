@@ -2,7 +2,7 @@
   "name": "chibisql",
   "displayName": "ChibiSQL - Anime SQLite Editor",
   "description": "Anime-themed SQLite Database Reader & Editor for VS Code & Cursor",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "chibisql",
   "repository": {
     "type": "git",

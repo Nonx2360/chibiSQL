@@ -6,3 +6,5 @@ example.db
 *.gif
 .agent/
 *.log
+/brag-output
+*.db
